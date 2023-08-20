@@ -1,4 +1,6 @@
 {comment} // comentario extra
+. , ; =
+: =
 (* otro comment *)
 . , ; = (12345) ; // hasta el final de la linea
 	{hola mundo}

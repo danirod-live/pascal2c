@@ -28,4 +28,13 @@ typedef enum tokentype {
 	TOK_VAR,
 } tokentype_t;
 
+typedef struct token {
+	tokentype_t type;
+	char *meta;
+} token_t;
+
+void token_free(token_t *tok);
+
 const char *tokentype_string(tokentype_t token);
+
+tokentype_t match_identifier(char *input);
