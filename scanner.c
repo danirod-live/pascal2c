@@ -5,123 +5,125 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 struct scanner {
-	FILE *fp;
-	circbuf_t *buf;
+	char *buffer;
+	unsigned int len;
+	unsigned int pos;
 };
-
-scanner_t *
-scanner_init(FILE *fp)
-{
-	scanner_t *scanner = malloc(sizeof(scanner_t));
-
-	if (scanner) {
-		scanner->fp = fp;
-		scanner->buf = circbuf_init();
-	}
-
-	// circbuf could not be initialised
-	if (!scanner->buf) {
-		free(scanner);
-		scanner = 0;
-	}
-
-	return scanner;
-}
-
-void
-scanner_free(scanner_t *scanner)
-{
-	circbuf_free(scanner->buf);
-	free(scanner);
-}
 
 /** returns the next character in the scanner without consuming it. */
 static int
 scanner_peek(scanner_t *scanner)
 {
-	int ch;
-	if (circbuf_empty(scanner->buf)) {
-		ch = fgetc(scanner->fp);
-		circbuf_write(scanner->buf, ch);
+	if (scanner->pos >= scanner->len) {
+		return EOF;
 	}
-	return circbuf_peek(scanner->buf);
+	return scanner->buffer[scanner->pos];
 }
 
 static int
 scanner_peekfar(scanner_t *scanner, int offt)
 {
-	int nch;
-
-	while (circbuf_bufsiz(scanner->buf) <= offt) {
-		nch = fgetc(scanner->fp);
-		circbuf_write(scanner->buf, nch);
+	size_t ea = scanner->pos + offt;
+	if (ea >= scanner->len) {
+		return EOF;
 	}
-	return circbuf_peekfar(scanner->buf, offt);
+	return scanner->buffer[ea];
 }
-
-#define scanner_discard(scanner) circbuf_read(scanner->buf)
 
 static void
 scanner_consume_until_char(scanner_t *scanner, char ch)
 {
-	while (scanner_peek(scanner) != ch) {
-		scanner_discard(scanner);
+	while (scanner->buffer[scanner->pos] != ch)
+		scanner->pos++;
+}
+
+static void
+consume_until_closing_bracket(scanner_t *scanner)
+{
+	// read until we find a closing bracket
+	while (scanner->buffer[scanner->pos] != '}')
+		scanner->pos++;
+	scanner->pos++; // skip the bracket itself
+}
+
+static void
+consume_until_closing_trigraph(scanner_t *scanner)
+{
+	// read until we find a *)
+	for (;;) {
+		while (scanner->buffer[scanner->pos] != '*')
+			scanner->pos++;
+		if (scanner->buffer[scanner->pos + 1] == ')') {
+			// a real trigraph ending.
+			scanner->pos += 2;
+			return;
+		} else {
+			// not a real trigraph ending, just an alone asterisk
+			// skip it and continue reading characters
+			scanner->pos++;
+		}
 	}
 }
 
-extern void circbuf_debug(circbuf_t *buf);
-
-static int
-scanner_peek_clean(scanner_t *scanner)
+static void
+consume_slash_comment(scanner_t *scanner)
 {
-	int ch;
+	// read until the end of the line
+	while (scanner->buffer[scanner->pos] != '\n')
+		scanner->pos++;
+	while (scanner->buffer[scanner->pos] == '\n')
+		scanner->pos++;
+}
+
+// check that the scanner points at a valid character, and moves the
+// offset if it doesn't. however, this function will not touch the
+// offset if it already points at a valid character
+static void
+scanner_clean(scanner_t *scanner)
+{
+	char ch;
 	int valid;
 
 	do {
-		ch = scanner_peek(scanner);
 		valid = 1;
 
-		// skip invalid characters
+		ch = scanner->buffer[scanner->pos];
 		switch (ch) {
 		case '\n':
 		case '\r':
 		case '\t':
 		case ' ':
-			scanner_discard(scanner);
+			scanner->pos++;
 			valid = 0;
 			break;
 		case '{':
-			scanner_consume_until_char(scanner, '}');
-			scanner_discard(scanner);
+			consume_until_closing_bracket(scanner);
 			valid = 0;
 			break;
 		case '/':
-			if (scanner_peekfar(scanner, 1) == '/') {
-				scanner_consume_until_char(scanner, '\n');
-				scanner_discard(scanner);
+			if (scanner->buffer[scanner->pos + 1] == '/') {
+				consume_slash_comment(scanner);
 				valid = 0;
 			}
 			break;
 		case '(':
-			if (scanner_peekfar(scanner, 1) == '*') {
-				for (;;) {
-					scanner_consume_until_char(scanner,
-					                           '*');
-					scanner_discard(scanner);
-					if (scanner_peek(scanner) == ')') {
-						scanner_discard(scanner);
-						break;
-					}
-				}
+			if (scanner->buffer[scanner->pos + 1] == '*') {
+				consume_until_closing_trigraph(scanner);
 				valid = 0;
-				break;
 			}
+			break;
 		}
 	} while (!valid);
+}
 
-	return ch;
+static void
+scanner_discard(scanner_t *scanner)
+{
+	scanner->pos++;
+	scanner_clean(scanner);
 }
 
 static token_t *
@@ -144,7 +146,7 @@ alloc_token(tokentype_t type)
 static token_t *
 scanner_read_as_digit(scanner_t *scanner)
 {
-	int i, len = 0;
+	int len = 0;
 	char chr;
 	char *value;
 
@@ -159,17 +161,19 @@ scanner_read_as_digit(scanner_t *scanner)
 
 	/* extract the string from the buffer */
 	value = malloc(sizeof(char) * len + 1);
-	for (i = 0; i < len; i++)
-		value[i] = circbuf_read(scanner->buf);
+	memcpy(value, scanner->buffer + scanner->pos, len);
 	value[len] = 0;
+
+	/* consume the characters once read */
+	scanner->pos += len;
 
 	return alloc_token_with_meta(TOK_DIGIT, value);
 }
 
-token_t *
+static token_t *
 scanner_read_as_identifier(scanner_t *scanner)
 {
-	int i, len = 0;
+	int len = 0;
 	char chr;
 	char *value;
 	tokentype_t type;
@@ -183,10 +187,13 @@ scanner_read_as_identifier(scanner_t *scanner)
 
 	/* extract the string from the buffer */
 	value = malloc(sizeof(char) * len + 1);
-	for (i = 0; i < len; i++)
-		value[i] = circbuf_read(scanner->buf);
+	memcpy(value, scanner->buffer + scanner->pos, len);
 	value[len] = 0;
 
+	/* consume the characters */
+	scanner->pos += len;
+
+	/* check out the lookup table in case it is a keyword. */
 	type = match_identifier(value);
 	if (type == TOK_IDENTIFIER) {
 		return alloc_token_with_meta(type, value);
@@ -199,7 +206,7 @@ scanner_read_as_string(scanner_t *scanner)
 {
 	char *meta;
 	char chr;
-	int i, len = 0;
+	int len = 0;
 
 	for (;;) {
 		chr = scanner_peekfar(scanner, len);
@@ -207,11 +214,12 @@ scanner_read_as_string(scanner_t *scanner)
 		case '\'':
 			len++;
 			while (scanner_peekfar(scanner, len) != '\'') {
-				// continue reading until the end of the string
+				// continue reading until the end of the
+				// string
 				len++;
 			}
-			len++; // skip the closing quote or this will be an
-			       // infinite loop
+			len++; // skip the closing quote or this will be
+			       // an infinite loop
 			break;
 		case '#':
 			len++;
@@ -220,19 +228,40 @@ scanner_read_as_string(scanner_t *scanner)
 			break;
 		default:
 			// the string is over
-			meta = malloc(sizeof(char) * (len + 1));
-			for (i = 0; i < len; i++)
-				meta[i] = circbuf_read(scanner->buf);
+			meta = malloc(sizeof(char) * len + 1);
+			memcpy(meta, scanner->buffer + scanner->pos, len);
 			meta[len] = 0;
+			scanner->pos += len;
 			return alloc_token_with_meta(TOK_STRING, meta);
 		}
 	}
 }
 
+scanner_t *
+scanner_init(char *buffer, size_t len)
+{
+	scanner_t *scanner = malloc(sizeof(scanner_t));
+
+	if (scanner) {
+		scanner->buffer = buffer;
+		scanner->len = len;
+		scanner->pos = 0;
+	}
+
+	return scanner;
+}
+
+void
+scanner_free(scanner_t *scanner)
+{
+	free(scanner);
+}
+
 token_t *
 scanner_next(scanner_t *scanner)
 {
-	int next = scanner_peek_clean(scanner);
+	scanner_clean(scanner);
+	int next = scanner_peek(scanner);
 
 	if (next == EOF) {
 		return alloc_token(TOK_EOF);
@@ -259,6 +288,9 @@ scanner_next(scanner_t *scanner)
 	case '=':
 		scanner_discard(scanner);
 		return alloc_token(TOK_EQUAL);
+	case '[':
+		scanner_discard(scanner);
+		return alloc_token(TOK_LBRACKET);
 	case '(':
 		scanner_discard(scanner);
 		return alloc_token(TOK_LPAREN);
@@ -268,6 +300,9 @@ scanner_next(scanner_t *scanner)
 	case '+':
 		scanner_discard(scanner);
 		return alloc_token(TOK_PLUS);
+	case ']':
+		scanner_discard(scanner);
+		return alloc_token(TOK_RBRACKET);
 	case ')':
 		scanner_discard(scanner);
 		return alloc_token(TOK_RPAREN);

@@ -4,7 +4,7 @@
 #include <stdio.h>
 typedef struct scanner scanner_t;
 
-scanner_t *scanner_init(FILE *);
+scanner_t *scanner_init(char *, size_t);
 
 token_t *scanner_next(scanner_t *);
 
