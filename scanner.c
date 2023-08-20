@@ -1,5 +1,4 @@
 #include "scanner.h"
-#include "circbuf.h"
 #include "token.h"
 
 #include <ctype.h>
@@ -180,7 +179,7 @@ scanner_read_as_identifier(scanner_t *scanner)
 
 	for (;;) {
 		chr = scanner_peekfar(scanner, len);
-		if (!isalpha(chr) && !isdigit(chr))
+		if (!isalpha(chr) && !isdigit(chr) && chr != '_')
 			break;
 		len++;
 	}
@@ -246,6 +245,13 @@ scanner_init(char *buffer, size_t len)
 		scanner->buffer = buffer;
 		scanner->len = len;
 		scanner->pos = 0;
+
+		// skip the BOM mark
+		if (scanner->buffer[0] == (char) 0xEF
+		    && scanner->buffer[1] == (char) 0xBB
+		    && scanner->buffer[2] == (char) 0xBF) {
+			scanner->pos = 4;
+		}
 	}
 
 	return scanner;
@@ -271,6 +277,12 @@ scanner_next(scanner_t *scanner)
 	case '*':
 		scanner_discard(scanner);
 		return alloc_token(TOK_ASTERISK);
+	case '@':
+		scanner_discard(scanner);
+		return alloc_token(TOK_AT);
+	case '^':
+		scanner_discard(scanner);
+		return alloc_token(TOK_CARET);
 	case ':':
 		if (scanner_peekfar(scanner, 1) == '=') {
 			scanner_discard(scanner);
@@ -282,15 +294,24 @@ scanner_next(scanner_t *scanner)
 	case ',':
 		scanner_discard(scanner);
 		return alloc_token(TOK_COMMA);
+	case '$':
+		scanner_discard(scanner);
+		return alloc_token(TOK_DOLLAR);
 	case '.':
 		scanner_discard(scanner);
 		return alloc_token(TOK_DOT);
 	case '=':
 		scanner_discard(scanner);
 		return alloc_token(TOK_EQUAL);
+	case '>':
+		scanner_discard(scanner);
+		return alloc_token(TOK_GREATER);
 	case '[':
 		scanner_discard(scanner);
 		return alloc_token(TOK_LBRACKET);
+	case '<':
+		scanner_discard(scanner);
+		return alloc_token(TOK_LESSER);
 	case '(':
 		scanner_discard(scanner);
 		return alloc_token(TOK_LPAREN);
@@ -317,7 +338,7 @@ scanner_next(scanner_t *scanner)
 	if (next >= '0' && next <= '9') {
 		return scanner_read_as_digit(scanner);
 	}
-	if ((next >= 'a' && next <= 'z') || (next >= 'A' && next <= 'Z')) {
+	if (isupper(next) || islower(next) || next == '_') {
 		return scanner_read_as_identifier(scanner);
 	}
 	if (next == '\'' || next == '#') {
