@@ -1,3 +1,4 @@
+#include "parser.h"
 #include "scanner.h"
 #include "token.h"
 #include <stdio.h>
@@ -24,6 +25,7 @@ int
 main(int argc, char **argv)
 {
 	scanner_t *scanner;
+	parser_t *parser;
 	token_t *tok;
 	int eof = 0;
 	FILE *fp;
@@ -59,17 +61,18 @@ main(int argc, char **argv)
 		return 1;
 	}
 
-	do {
-		tok = scanner_next(scanner);
-		if (tok && tok->type != TOK_EOF) {
-			print_token(tok);
-		}
-		if (tok->type == TOK_EOF) {
-			eof = 1;
-		}
-		token_free(tok);
-		free(tok);
-	} while (!eof);
+	if ((parser = parser_new()) == NULL) {
+		puts("error: parser_new");
+		return 1;
+	}
+
+	parser_load_tokens(parser, scanner);
+	parser_dump(parser);
+
+	expr_t *exp = parser_unsigned_number(parser);
+	if (exp != NULL) {
+		printf("Expresión");
+	}
 
 	scanner_free(scanner);
 	return 0;
