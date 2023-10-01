@@ -143,19 +143,68 @@ alloc_token(tokentype_t type)
 }
 
 static token_t *
-scanner_read_as_digit(scanner_t *scanner)
+scanner_read_as_number(scanner_t *scanner)
 {
-	int len = 0;
+	int len = 0, flag = 0;
 	char chr;
 	char *value;
 
-	/* find the first len where the character is not a digit */
-	/* TODO: what about the real numbers? */
 	for (;;) {
 		chr = scanner_peekfar(scanner, len);
-		if (chr < '0' || chr > '9')
-			break;
-		len++;
+
+		// Common case: read digits.
+		if (chr >= '0' && chr <= '9') {
+			len++;
+			continue;
+		}
+
+		// Switch from integer to decimal part.
+		if (chr == '.' && flag < 1) {
+			flag = 1;
+
+			// Check that there is a number after the dot
+			chr = scanner_peekfar(scanner, len + 1);
+			if (chr >= '0' && chr <= '9') {
+				len++;
+			} else {
+				// Avoid incrementing len when invalid to
+				// prevent the dot being part of the number.
+				// Let's let the dot as a separate token, and
+				// someone else will figure out.
+				flag = 3;
+			}
+
+			continue;
+		}
+
+		// Switch from integer or decimal to exponential.
+		if (((chr == 'e') || (chr == 'E')) && flag < 2) {
+			flag = 2;
+
+			// Check what is after the E.
+			chr = scanner_peekfar(scanner, len + 1);
+			if (chr == '+' || chr == '-') {
+				// Check the character after the plus and the
+				// minus.
+				chr = scanner_peekfar(scanner, len + 2);
+				if (chr >= '0' && chr <= '9') {
+					len += 2;
+				} else {
+					// Not a number, stop.
+					flag = 3;
+				}
+			} else if (chr >= '0' && chr <= '9') {
+				len++;
+			} else {
+				// Not a number, stop.
+				flag = 3;
+			}
+			continue;
+		}
+
+		// If we reach here, then we found a symbol that does not belong
+		// to this
+		break;
 	}
 
 	/* extract the string from the buffer */
@@ -336,7 +385,7 @@ scanner_next(scanner_t *scanner)
 	}
 
 	if (next >= '0' && next <= '9') {
-		return scanner_read_as_digit(scanner);
+		return scanner_read_as_number(scanner);
 	}
 	if (isupper(next) || islower(next) || next == '_') {
 		return scanner_read_as_identifier(scanner);
