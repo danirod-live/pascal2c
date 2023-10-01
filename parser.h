@@ -34,4 +34,5 @@ void parser_load_tokens(parser_t *parser, scanner_t *scanner);
 void parser_dump(parser_t *parser);
 
 expr_t *parser_identifier(parser_t *parser);
+expr_t *parser_unsigned_integer(parser_t *parser);
 expr_t *parser_unsigned_number(parser_t *parser);

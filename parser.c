@@ -155,12 +155,27 @@ parser_identifier(parser_t *parser)
 	             "Token is of invalid type, expected IDENTIFIER");
 }
 
+static int
+is_clean_integer(char *number)
+{
+	while (number && *number) {
+		if (*number < '0' || *number > '9') {
+			return 0;
+		}
+		number++;
+	}
+	return 1;
+}
+
 expr_t *
 parser_unsigned_integer(parser_t *parser)
 {
 	token_t *token = parser_token(parser);
 	if (token->type == TOK_DIGIT) {
-		return new_literal(token);
+		if (is_clean_integer(token->meta)) {
+			return new_literal(token);
+		}
+		parser_error(parser, token, "Expected integer");
 	}
 	parser_error(parser, token, "Token is of invalid type, expected DIGIT");
 }
@@ -177,50 +192,9 @@ parser_consume(parser_t *parser, tokentype_t type)
 expr_t *
 parser_unsigned_number(parser_t *parser)
 {
-	expr_t *integer_part, *decimal_part = NULL, *exp_part = NULL;
-	token_t *e, *dot, *exp_sign = NULL;
-
-	integer_part = parser_unsigned_integer(parser);
-	dot = parser_peek(parser);
-	if (dot->type == TOK_DOT) {
-		parser_consume(parser, TOK_DOT);
-		decimal_part = parser_unsigned_integer(parser);
+	token_t *token = parser_token(parser);
+	if (token->type == TOK_DIGIT) {
+		return new_literal(token);
 	}
-
-	e = parser_peek(parser);
-	if (e->type == TOK_IDENTIFIER
-	    && (e->meta[0] == 'e' || e->meta[0] == 'E') && (e->meta[1] == 0)) {
-		parser_consume(parser, TOK_IDENTIFIER);
-
-		exp_sign = parser_peek(parser);
-		if (exp_sign->type == TOK_PLUS) {
-			parser_consume(parser, TOK_PLUS);
-		} else if (exp_sign->type == TOK_MINUS) {
-			parser_consume(parser, TOK_MINUS);
-		}
-		exp_part = parser_unsigned_integer(parser);
-	}
-
-	printf("Número que he leído: ");
-	printf("%s", integer_part->token->meta);
-	if (decimal_part != NULL) {
-		printf(".%s", decimal_part->token->meta);
-	} else {
-		printf(".0");
-	}
-	if (exp_part != NULL) {
-		printf("E");
-		if (exp_sign != NULL) {
-			if (exp_sign->type == TOK_PLUS) {
-				printf("+");
-			} else if (exp_sign->type == TOK_MINUS) {
-				printf("-");
-			}
-		} else {
-			printf("+");
-		}
-		printf("%s\n", exp_part->token->meta);
-	} else {
-		printf("E+0");
-	}
+	parser_error(parser, token, "Token is of invalid type, expected DIGIT");
 }

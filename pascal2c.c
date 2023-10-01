@@ -69,7 +69,7 @@ main(int argc, char **argv)
 	parser_load_tokens(parser, scanner);
 	parser_dump(parser);
 
-	expr_t *exp = parser_unsigned_number(parser);
+	expr_t *exp = parser_unsigned_integer(parser);
 	if (exp != NULL) {
 		printf("Expresión");
 	}
