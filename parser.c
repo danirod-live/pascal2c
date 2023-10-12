@@ -1,9 +1,60 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "parser.h"
 #include "scanner.h"
 #include "token.h"
+
+static void
+print_token(token_t *tok)
+{
+	if (tok == 0) {
+		return;
+	}
+	if (tok->meta != 0) {
+		printf("%s(%s)\n", tokentype_string(tok->type), tok->meta);
+	} else {
+		puts(tokentype_string(tok->type));
+	}
+}
+
+static void
+dump_expr_impl(expr_t *expr, int padding)
+{
+	if (!expr) {
+		return;
+	}
+	char *space = malloc(sizeof(char) * padding + 1);
+	memset(space, ' ', padding);
+	space[padding] = 0;
+
+	printf("%s", space);
+	switch (expr->type) {
+	case BINARY:
+		printf("BINARY ");
+		break;
+	case UNARY:
+		printf("UNARY ");
+		break;
+	case GROUPING:
+		printf("GROUPING ");
+		break;
+	case LITERAL:
+		printf("LITERAL ");
+		break;
+	}
+	print_token(expr->token);
+	dump_expr_impl(expr->exp_left, padding + 2);
+	dump_expr_impl(expr->exp_right, padding + 2);
+	free(space);
+}
+
+void
+dump_expr(expr_t *expr)
+{
+	dump_expr_impl(expr, 0);
+}
 
 expr_t *
 new_unary(token_t *t, expr_t *expr)
@@ -101,16 +152,6 @@ parser_load_tokens(parser_t *parser, scanner_t *scanner)
 
 	// Add the remaining tokens that did not fill the buffer.
 	parser_append(parser, tokens, bufsiz);
-}
-
-static void
-print_token(token_t *tok)
-{
-	if (tok->meta != 0) {
-		printf("%s(%s)\n", tokentype_string(tok->type), tok->meta);
-	} else {
-		puts(tokentype_string(tok->type));
-	}
 }
 
 void

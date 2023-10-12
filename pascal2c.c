@@ -5,16 +5,6 @@
 #include <stdlib.h>
 
 static void
-print_token(token_t *tok)
-{
-	if (tok->meta != 0) {
-		printf("%s(%s)\n", tokentype_string(tok->type), tok->meta);
-	} else {
-		puts(tokentype_string(tok->type));
-	}
-}
-
-static void
 openerror()
 {
 	perror("cannot open input file");
