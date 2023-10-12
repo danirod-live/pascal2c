@@ -38,5 +38,6 @@ expr_t *parser_unsigned_integer(parser_t *parser);
 expr_t *parser_unsigned_number(parser_t *parser);
 expr_t *parser_unsigned_constant(parser_t *parser);
 expr_t *parser_constant(parser_t *parser);
+expr_t *parser_simple_type(parser_t *parser);
 
 void dump_expr(expr_t *expr);

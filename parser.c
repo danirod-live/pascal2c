@@ -221,6 +221,16 @@ parser_unsigned_integer(parser_t *parser)
 	parser_error(parser, token, "Token is of invalid type, expected DIGIT");
 }
 
+token_t *
+parser_validate_token(parser_t *parser, tokentype_t expected)
+{
+	token_t *next = parser_token(parser);
+	if (next->type != expected) {
+		parser_error(parser, next, "Token is not of expected type");
+	}
+	return next;
+}
+
 void
 parser_consume(parser_t *parser, tokentype_t type)
 {
@@ -284,4 +294,38 @@ parser_constant(parser_t *parser)
 	}
 
 	parser_error(parser, next_token, "Unexpected token type");
+}
+
+expr_t *
+parser_simple_type(parser_t *parser)
+{
+	token_t *next_symbol, *next_id;
+	expr_t *root, *next_node;
+
+	// We know that it must be an LPAREN. Also, initialise the tree now.
+	next_symbol = parser_validate_token(parser, TOK_LPAREN);
+	root = new_binary(next_symbol, NULL, NULL);
+	next_node = root;
+
+	while (1) {
+		// Read next identifier and whatever comes after that.
+		next_id = parser_validate_token(parser, TOK_IDENTIFIER);
+		next_node->exp_left = new_literal(next_id);
+		next_symbol = parser_token(parser);
+
+		if (next_symbol->type == TOK_RPAREN) {
+			next_node->exp_right = new_literal(next_symbol);
+			break;
+		} else if (next_symbol->type == TOK_COMMA) {
+			next_node->exp_right =
+			    new_binary(next_symbol, NULL, NULL);
+			next_node = next_node->exp_right;
+		} else {
+			parser_error(parser,
+			             next_symbol,
+			             "Expected either ) or ,");
+		}
+	}
+
+	return root;
 }
