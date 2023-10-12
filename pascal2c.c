@@ -57,12 +57,16 @@ main(int argc, char **argv)
 	}
 
 	parser_load_tokens(parser, scanner);
-	parser_dump(parser);
+	// parser_dump(parser);
 
-	expr_t *exp = parser_unsigned_integer(parser);
-	if (exp != NULL) {
-		printf("Expresión");
-	}
+	dump_expr(parser_constant(parser));
+	dump_expr(parser_constant(parser));
+	dump_expr(parser_constant(parser));
+	dump_expr(parser_constant(parser));
+	dump_expr(parser_constant(parser));
+	dump_expr(parser_constant(parser));
+	dump_expr(parser_constant(parser));
+	dump_expr(parser_constant(parser));
 
 	scanner_free(scanner);
 	return 0;

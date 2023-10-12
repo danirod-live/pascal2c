@@ -25,6 +25,7 @@ typedef enum tokentype {
 	TOK_LPAREN,
 	TOK_MINUS,
 	TOK_MOD,
+	TOK_NIL,
 	TOK_PLUS,
 	TOK_PROGRAM,
 	TOK_SLASH,

@@ -239,3 +239,49 @@ parser_unsigned_number(parser_t *parser)
 	}
 	parser_error(parser, token, "Token is of invalid type, expected DIGIT");
 }
+
+expr_t *
+parser_unsigned_constant(parser_t *parser)
+{
+	token_t *token = parser_token(parser);
+	switch (token->type) {
+	case TOK_STRING:
+	case TOK_NIL:
+	case TOK_DIGIT:
+	case TOK_IDENTIFIER:
+		return new_literal(token);
+	default:
+		parser_error(parser, token, "Token is of invalid type");
+	}
+}
+
+// TODO: Should review the AST, because this is going to be nuts in the future.
+expr_t *
+parser_constant(parser_t *parser)
+{
+	token_t *token;
+	token_t *next_token = parser_peek(parser);
+	expr_t *wrapped;
+	token_t *sign_token = NULL;
+
+	if (next_token->type == TOK_STRING) {
+		token = parser_token(parser);
+		return new_literal(token);
+	}
+
+	if (next_token->type == TOK_PLUS || next_token->type == TOK_MINUS) {
+		sign_token = parser_token(parser);
+	}
+
+	token = parser_token(parser);
+	if (token->type == TOK_IDENTIFIER || token->type == TOK_DIGIT) {
+		wrapped = new_literal(token);
+		if (sign_token == NULL) {
+			return wrapped;
+		} else {
+			return new_unary(sign_token, wrapped);
+		}
+	}
+
+	parser_error(parser, next_token, "Unexpected token type");
+}
