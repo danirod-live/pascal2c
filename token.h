@@ -16,6 +16,7 @@ typedef enum tokentype {
 	TOK_DIV,
 	TOK_DOLLAR,
 	TOK_DOT,
+	TOK_DOTDOT,
 	TOK_END,
 	TOK_EQUAL,
 	TOK_GREATER,

@@ -347,8 +347,14 @@ scanner_next(scanner_t *scanner)
 		scanner_discard(scanner);
 		return alloc_token(TOK_DOLLAR);
 	case '.':
-		scanner_discard(scanner);
-		return alloc_token(TOK_DOT);
+		if (scanner_peekfar(scanner, 1) == '.') {
+			scanner_discard(scanner);
+			scanner_discard(scanner);
+			return alloc_token(TOK_DOTDOT);
+		} else {
+			scanner_discard(scanner);
+			return alloc_token(TOK_DOT);
+		}
 	case '=':
 		scanner_discard(scanner);
 		return alloc_token(TOK_EQUAL);
