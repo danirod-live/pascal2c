@@ -302,28 +302,40 @@ parser_simple_type(parser_t *parser)
 	token_t *next_symbol, *next_id;
 	expr_t *root, *next_node;
 
-	// We know that it must be an LPAREN. Also, initialise the tree now.
-	next_symbol = parser_validate_token(parser, TOK_LPAREN);
-	root = new_binary(next_symbol, NULL, NULL);
-	next_node = root;
+	next_symbol = parser_peek(parser);
+	if (next_symbol->type == TOK_LPAREN) {
+		next_symbol = parser_validate_token(parser, TOK_LPAREN);
+		// Branch 2 - (identifiers separated by commas inside brackets)
+		root = new_binary(next_symbol, NULL, NULL);
+		next_node = root;
 
-	while (1) {
-		// Read next identifier and whatever comes after that.
-		next_id = parser_validate_token(parser, TOK_IDENTIFIER);
-		next_node->exp_left = new_literal(next_id);
-		next_symbol = parser_token(parser);
+		while (1) {
+			// Assign left branch
+			next_node->exp_left = parser_identifier(parser);
 
-		if (next_symbol->type == TOK_RPAREN) {
-			next_node->exp_right = new_literal(next_symbol);
-			break;
-		} else if (next_symbol->type == TOK_COMMA) {
-			next_node->exp_right =
-			    new_binary(next_symbol, NULL, NULL);
-			next_node = next_node->exp_right;
+			// Pick what goes on the right branch
+			next_symbol = parser_token(parser);
+			if (next_symbol->type == TOK_RPAREN) {
+				next_node->exp_right = new_literal(next_symbol);
+				break;
+			} else {
+				next_node->exp_right =
+				    new_binary(next_symbol, NULL, NULL);
+				next_node = next_node->exp_right;
+			}
+		}
+	} else {
+		next_node = parser_constant(parser);
+		next_symbol = parser_peek(parser);
+		if (next_symbol->type == TOK_DOTDOT) {
+			// Branch 3 - (two identifiers between a ..)
+			next_symbol = parser_validate_token(parser, TOK_DOTDOT);
+			root = new_binary(next_symbol, NULL, NULL);
+			root->exp_left = next_node;
+			root->exp_right = parser_constant(parser);
 		} else {
-			parser_error(parser,
-			             next_symbol,
-			             "Expected either ) or ,");
+			// Branch 1 - identifier alone
+			root = new_grouping(next_node);
 		}
 	}
 
