@@ -57,7 +57,7 @@ main(int argc, char **argv)
 	}
 
 	parser_load_tokens(parser, scanner);
-	dump_expr(parser_simple_type(parser));
+	dump_expr(parser_type(parser));
 
 	scanner_free(scanner);
 	return 0;

@@ -3,6 +3,7 @@
 typedef enum tokentype {
 	TOK_EOF,
 
+	TOK_ARRAY,
 	TOK_ASSIGN,
 	TOK_ASTERISK,
 	TOK_AT,
@@ -19,6 +20,7 @@ typedef enum tokentype {
 	TOK_DOTDOT,
 	TOK_END,
 	TOK_EQUAL,
+	TOK_FILE,
 	TOK_GREATER,
 	TOK_IDENTIFIER,
 	TOK_LBRACKET,
@@ -27,8 +29,12 @@ typedef enum tokentype {
 	TOK_MINUS,
 	TOK_MOD,
 	TOK_NIL,
+	TOK_OF,
+	TOK_PACKED,
 	TOK_PLUS,
 	TOK_PROGRAM,
+	TOK_RECORD,
+	TOK_SET,
 	TOK_SLASH,
 	TOK_STRING,
 	TOK_RBRACKET,

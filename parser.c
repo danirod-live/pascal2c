@@ -318,10 +318,14 @@ parser_simple_type(parser_t *parser)
 			if (next_symbol->type == TOK_RPAREN) {
 				next_node->exp_right = new_literal(next_symbol);
 				break;
-			} else {
+			} else if (next_symbol->type == TOK_COMMA) {
 				next_node->exp_right =
 				    new_binary(next_symbol, NULL, NULL);
 				next_node = next_node->exp_right;
+			} else {
+				parser_error(parser,
+				             next_symbol,
+				             "Expected either COMMA or RPAREN");
 			}
 		}
 	} else {
@@ -337,6 +341,109 @@ parser_simple_type(parser_t *parser)
 			// Branch 1 - identifier alone
 			root = new_grouping(next_node);
 		}
+	}
+
+	return root;
+}
+
+expr_t *
+parser_type(parser_t *parser)
+{
+	token_t *next_token, *packed = NULL;
+	expr_t *root, *next_expr;
+
+	next_token = parser_peek(parser);
+
+	if (next_token->type == TOK_PACKED) {
+		packed = next_token;
+		parser_consume(parser, TOK_PACKED);
+		next_token = parser_peek(parser);
+	}
+
+	switch (next_token->type) {
+	case TOK_CARET:
+		if (packed) {
+			parser_error(parser,
+			             next_token,
+			             "CARET cannot be PACKED");
+		}
+		root = new_unary(next_token, NULL);
+		parser_consume(parser, TOK_CARET);
+		root->exp_left = parser_identifier(parser);
+		break;
+	case TOK_ARRAY:
+		// Consume TOK_ARRAY
+		root = new_binary(next_token, NULL, NULL);
+		parser_validate_token(parser, TOK_ARRAY);
+
+		// Consume the list of simple types that goes between []
+		next_token = parser_validate_token(parser, TOK_LBRACKET);
+		root->exp_left = new_binary(next_token, NULL, NULL);
+		next_expr = root->exp_left;
+
+		while (1) {
+			next_expr->exp_left = parser_simple_type(parser);
+
+			next_token = parser_token(parser);
+			if (next_token->type == TOK_COMMA) {
+				next_expr->exp_right =
+				    new_binary(next_token, NULL, NULL);
+				next_expr = next_expr->exp_right;
+			} else if (next_token->type == TOK_RBRACKET) {
+				next_expr->exp_right = new_literal(next_token);
+				break;
+			} else {
+				parser_error(
+				    parser,
+				    next_token,
+				    "Expected either RBRACKET or COMMA");
+			}
+		}
+
+		parser_validate_token(parser, TOK_OF);
+		root->exp_right = parser_type(parser);
+		break;
+	case TOK_FILE:
+		// Consume TOK_FILE
+		root = new_unary(next_token, NULL);
+		parser_validate_token(parser, TOK_FILE);
+
+		// Must follow an OF
+		parser_validate_token(parser, TOK_OF);
+
+		// Recursive definition
+		root->exp_left = parser_type(parser);
+		break;
+	case TOK_SET:
+		// Consume TOK_SET
+		root = new_unary(next_token, NULL);
+		parser_validate_token(parser, TOK_SET);
+
+		// Must follow an OF
+		parser_validate_token(parser, TOK_OF);
+
+		// Must follow a simple type
+		root->exp_left = parser_simple_type(parser);
+		break;
+	case TOK_RECORD:
+		// TODO: write
+		parser_error(parser,
+		             next_token,
+		             "RECORD is not implemented yet");
+		break;
+	default:
+		if (packed) {
+			parser_error(parser,
+			             next_token,
+			             "Cannot use PACKED in this context");
+		}
+		root = parser_simple_type(parser);
+		break;
+	}
+
+	// Wrap in a PACKED if we previously saw the packed keyword.
+	if (packed) {
+		root = new_unary(packed, root);
 	}
 
 	return root;
