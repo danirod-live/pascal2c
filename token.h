@@ -9,6 +9,7 @@ typedef enum tokentype {
 	TOK_AT,
 	TOK_BEGIN,
 	TOK_CARET,
+	TOK_CASE,
 	TOK_COLON,
 	TOK_COMMA,
 	TOK_CTRLCODE,

@@ -426,10 +426,14 @@ parser_type(parser_t *parser)
 		root->exp_left = parser_simple_type(parser);
 		break;
 	case TOK_RECORD:
-		// TODO: write
-		parser_error(parser,
-		             next_token,
-		             "RECORD is not implemented yet");
+		// Consume RECORD
+		root = new_unary(next_token, NULL);
+		parser_validate_token(parser, TOK_RECORD);
+
+		root->exp_left = parser_field_list(parser);
+
+		// Must follow an END.
+		parser_validate_token(parser, TOK_END);
 		break;
 	default:
 		if (packed) {
@@ -444,6 +448,77 @@ parser_type(parser_t *parser)
 	// Wrap in a PACKED if we previously saw the packed keyword.
 	if (packed) {
 		root = new_unary(packed, root);
+	}
+
+	return root;
+}
+
+expr_t *
+parser_field_list(parser_t *parser)
+{
+	expr_t *root, *next_token;
+	token_t *token = parser_peek(parser);
+	int is_first = 1;
+
+	if (token->type == TOK_CASE) {
+		parser_error(parser, token, "Unexpected CASE, not implemented");
+	}
+
+	root = new_binary(NULL, NULL, NULL);
+	next_token = root;
+
+	// each one of the field line in the field list
+	for (;;) {
+		// each one of the identifiers in this field line
+		for (;;) {
+			token = parser_peek(parser);
+			if (token->type != TOK_IDENTIFIER) {
+				if (is_first) {
+					parser_error(parser,
+					             token,
+					             "Unexpected symbol, "
+					             "expected IDENTIFIER");
+				} else {
+					return root;
+				}
+			}
+			next_token->exp_left = parser_identifier(parser);
+			is_first = 0;
+
+			// Whether there is a comma or a colon. If none, then it
+			// is an error.
+			token = parser_peek(parser);
+			if (token->type == TOK_COMMA) {
+				next_token->exp_right =
+				    new_binary(token, NULL, NULL);
+				parser_validate_token(parser, TOK_COMMA);
+				next_token = next_token->exp_right;
+			} else if (token->type == TOK_COLON) {
+				next_token->exp_right =
+				    new_binary(token, NULL, NULL);
+				parser_validate_token(parser, TOK_COLON);
+				next_token = next_token->exp_right;
+				break;
+			} else {
+				parser_error(parser,
+				             token,
+				             "Unexpected token, expected "
+				             "either COMMA or COLON");
+			}
+		}
+
+		// The list of identifiers is over, now we read the type.
+		next_token->exp_left = parser_identifier(parser);
+
+		// check if we have another loop
+		token = parser_peek(parser);
+		if (token->type == TOK_SEMICOLON) {
+			next_token->exp_right = new_binary(token, NULL, NULL);
+			next_token = next_token->exp_right;
+			parser_validate_token(parser, TOK_SEMICOLON);
+		} else {
+			break;
+		}
 	}
 
 	return root;
