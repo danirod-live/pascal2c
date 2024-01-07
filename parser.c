@@ -509,7 +509,7 @@ parser_field_list(parser_t *parser)
 		}
 
 		// The list of identifiers is over, now we read the type.
-		next_token->exp_left = parser_identifier(parser);
+		next_token->exp_left = parser_type(parser);
 
 		// check if we have another loop
 		token = parser_peek(parser);
