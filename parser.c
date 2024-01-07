@@ -284,7 +284,8 @@ parser_constant(parser_t *parser)
 	}
 
 	token = parser_token(parser);
-	if (token->type == TOK_IDENTIFIER || token->type == TOK_DIGIT) {
+	if (token->type == TOK_IDENTIFIER || token->type == TOK_NIL
+	    || token->type == TOK_DIGIT) {
 		wrapped = new_literal(token);
 		if (sign_token == NULL) {
 			return wrapped;
