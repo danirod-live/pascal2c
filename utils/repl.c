@@ -22,19 +22,40 @@ print_token(token_t *tok)
 static int
 readkeyb()
 {
-	int i, offt = 0;
-	char *cleanup;
+	int offt = 0;
+	char partial_buffer[FGETS_SIZE];
 
-	if (fgets(buffer + offt, FGETS_SIZE, stdin)) {
-		// check if it is empty string
-		cleanup = buffer;
-		while (*cleanup == '\n' || *cleanup == '\t' || *cleanup == ' ')
-			cleanup++;
-		if (*cleanup == 0)
-			return -1;
-		return 0;
+	// mark the start of the string with a zero to detect empty string
+	buffer[0] = 0;
+
+	while (fgets(partial_buffer, FGETS_SIZE, stdin) != NULL) {
+		char *pbuf_start = partial_buffer;
+
+		// skip whitespace present at the beginning of partial_buffer
+		while (*pbuf_start == '\n' || *pbuf_start == '\r'
+		       || *pbuf_start == '\t' || *pbuf_start == ' ')
+			pbuf_start++;
+
+		if (*pbuf_start == 0) {
+			// if after skipping whitespace, you reach end, then
+			// you did not read nothing at all.
+			break;
+		}
+
+		strncpy(buffer + offt, pbuf_start, FGETS_SIZE);
+		offt += strnlen(pbuf_start, FGETS_SIZE);
+
+		// limit to a single line -- TODO: remove this in the future
+		int line_ended = 0;
+		for (char *p = pbuf_start; *p; p++)
+			if (*p == '\n')
+				line_ended = 1;
+		if (line_ended)
+			break;
 	}
-	return -1;
+	if (buffer[0] == 0)
+		return -1;
+	return 0;
 }
 
 static int
