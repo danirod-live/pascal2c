@@ -1,3 +1,4 @@
+#include "../parser.h"
 #include "../scanner.h"
 #include "../token.h"
 #include <stdio.h>
@@ -31,31 +32,20 @@ readkeyb()
 	while (fgets(partial_buffer, FGETS_SIZE, stdin) != NULL) {
 		char *pbuf_start = partial_buffer;
 
-		// skip whitespace present at the beginning of partial_buffer
+		// skip whitespace at the beginning of the read line and treat
+		// empty strings as if no characters had been read
 		while (*pbuf_start == '\n' || *pbuf_start == '\r'
 		       || *pbuf_start == '\t' || *pbuf_start == ' ')
 			pbuf_start++;
-
 		if (*pbuf_start == 0) {
-			// if after skipping whitespace, you reach end, then
-			// you did not read nothing at all.
 			break;
 		}
 
+		// append whatever we have read into the buffer
 		strncpy(buffer + offt, pbuf_start, FGETS_SIZE);
 		offt += strnlen(pbuf_start, FGETS_SIZE);
-
-		// limit to a single line -- TODO: remove this in the future
-		int line_ended = 0;
-		for (char *p = pbuf_start; *p; p++)
-			if (*p == '\n')
-				line_ended = 1;
-		if (line_ended)
-			break;
 	}
-	if (buffer[0] == 0)
-		return -1;
-	return 0;
+	return offt;
 }
 
 static int
@@ -85,14 +75,46 @@ evaltoken()
 }
 
 static int
-readloop()
+evalexpr()
+{
+	scanner_t *scanner;
+	parser_t *parser;
+	token_t *token;
+	int eof = 0;
+	int length = strnlen((const char *) buffer, BUFFER_SIZE);
+
+	if ((scanner = scanner_init(buffer, length)) != NULL) {
+		parser = parser_new();
+		parser_load_tokens(parser, scanner);
+		dump_expr(parser_type(parser));
+		scanner_free(scanner);
+		return 0;
+	}
+	return -1;
+}
+
+static int
+readtokenloop()
 {
 	printf("> ");
-	if (readkeyb() == -1) {
+	if (readkeyb() == 0) {
 		return 1;
 	}
 
 	evaltoken();
+
+	return 0;
+}
+
+static int
+readexprloop()
+{
+	printf("> ");
+	if (readkeyb() == 0) {
+		return 1;
+	}
+
+	evalexpr();
 
 	return 0;
 }
@@ -106,9 +128,33 @@ usage()
 	puts(" --multiline: don't stop after a line break");
 }
 
+#define MODE_TOKENS 1
+#define MODE_EXPRS 2
+
 int
 main(int argc, char **argv)
 {
-	while (!readloop())
-		;
+	int mode = MODE_TOKENS;
+	if (argc >= 2) {
+		if (!strncmp(argv[1], "--tokens", 10)) {
+			mode = MODE_TOKENS;
+		} else if (!strncmp(argv[1], "--exprs", 10)) {
+			mode = MODE_EXPRS;
+		} else {
+			printf("Invalid argument: %s", argv[1]);
+			usage();
+			return 1;
+		}
+	}
+	if (mode == MODE_TOKENS) {
+		while (!readtokenloop())
+			;
+	} else if (mode == MODE_EXPRS) {
+		puts("Entering expression mode. Type Pascal code to be "
+		     "evaluated.\n"
+		     "End your expression with an empty line to submit to the "
+		     "parser.");
+		while (!readexprloop())
+			;
+	}
 }
