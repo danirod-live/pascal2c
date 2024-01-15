@@ -41,5 +41,6 @@ expr_t *parser_constant(parser_t *parser);
 expr_t *parser_simple_type(parser_t *parser);
 expr_t *parser_type(parser_t *parser);
 expr_t *parser_field_list(parser_t *parser);
+expr_t *parser_variable(parser_t *parser);
 
 void dump_expr(expr_t *expr);

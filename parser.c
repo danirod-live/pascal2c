@@ -454,73 +454,292 @@ parser_type(parser_t *parser)
 	return root;
 }
 
+static int
+token_is_constant(token_t *token)
+{
+	switch (token->type) {
+	case TOK_PLUS:
+	case TOK_MINUS:
+	case TOK_IDENTIFIER:
+	case TOK_DIGIT:
+	case TOK_NIL:
+	case TOK_STRING:
+		return 1;
+	default:
+		return 0;
+	}
+}
+
+static expr_t *
+parse_identifier_list(parser_t *parser)
+{
+	expr_t *root = NULL, *next = root;
+	token_t *token;
+
+	for (;;) {
+		/* read the next identifier (it has to be an identifier). */
+		token = parser_peek(parser);
+		parser_consume(parser, TOK_IDENTIFIER);
+
+		/* add the token into the list of identifiers. */
+		if (!root) {
+			root = new_unary(token, NULL);
+			next = root;
+		} else {
+			next->exp_left = new_unary(token, NULL);
+			next = next->exp_left;
+		}
+
+		/* check if there are more tokens to parse. */
+		token = parser_peek(parser);
+		if (token->type != TOK_COMMA) {
+			return root;
+		}
+		parser_consume(parser, TOK_COMMA);
+	}
+}
+
+static expr_t *
+parse_constant_list(parser_t *parser)
+{
+	expr_t *root = NULL, *next, *constant;
+	token_t *token;
+
+	for (;;) {
+		/* parse the constant and add it to the chain. */
+		constant = parser_constant(parser);
+		if (!root) {
+			root = new_binary(NULL, constant, NULL);
+			next = root;
+		} else {
+			next->exp_right = new_binary(NULL, constant, NULL);
+			next = next->exp_right;
+		}
+
+		/* check if there are more tokens to parse. */
+		token = parser_peek(parser);
+		if (token->type != TOK_COMMA) {
+			return root;
+		}
+		parser_consume(parser, TOK_COMMA);
+	}
+}
+
+static expr_t *
+parser_field_list_branch(parser_t *parser)
+{
+	expr_t *constant, *fields;
+	token_t *token;
+
+	constant = parse_constant_list(parser);
+	token = parser_token(parser);
+	if (token->type != TOK_COLON) {
+		parser_error(parser, token, "Expected a COLON here");
+	}
+	parser_consume(parser, TOK_LPAREN);
+	fields = parser_field_list(parser);
+	parser_consume(parser, TOK_RPAREN);
+
+	return new_binary(token, constant, fields);
+}
+
 expr_t *
 parser_field_list(parser_t *parser)
 {
-	expr_t *root, *next_token;
-	token_t *token = parser_peek(parser);
-	int is_first = 1;
+	expr_t *root = NULL, *next;
+	expr_t *left, *idents, *type;
+	token_t *token, *tokenpeek;
 
-	if (token->type == TOK_CASE) {
-		parser_error(parser, token, "Unexpected CASE, not implemented");
-	}
-
-	root = new_binary(NULL, NULL, NULL);
-	next_token = root;
-
-	// each one of the field line in the field list
+	/* Stage 1: normal fields list. */
 	for (;;) {
-		// each one of the identifiers in this field line
-		for (;;) {
-			token = parser_peek(parser);
-			if (token->type != TOK_IDENTIFIER) {
-				if (is_first) {
-					parser_error(parser,
-					             token,
-					             "Unexpected symbol, "
-					             "expected IDENTIFIER");
-				} else {
-					return root;
-				}
-			}
-			next_token->exp_left = parser_identifier(parser);
-			is_first = 0;
-
-			// Whether there is a comma or a colon. If none, then it
-			// is an error.
-			token = parser_peek(parser);
-			if (token->type == TOK_COMMA) {
-				next_token->exp_right =
-				    new_binary(token, NULL, NULL);
-				parser_validate_token(parser, TOK_COMMA);
-				next_token = next_token->exp_right;
-			} else if (token->type == TOK_COLON) {
-				next_token->exp_right =
-				    new_binary(token, NULL, NULL);
-				parser_validate_token(parser, TOK_COLON);
-				next_token = next_token->exp_right;
-				break;
-			} else {
-				parser_error(parser,
-				             token,
-				             "Unexpected token, expected "
-				             "either COMMA or COLON");
-			}
-		}
-
-		// The list of identifiers is over, now we read the type.
-		next_token->exp_left = parser_type(parser);
-
-		// check if we have another loop
+		/* is a new identifier incoming? */
 		token = parser_peek(parser);
-		if (token->type == TOK_SEMICOLON) {
-			next_token->exp_right = new_binary(token, NULL, NULL);
-			next_token = next_token->exp_right;
-			parser_validate_token(parser, TOK_SEMICOLON);
-		} else {
+		if (token->type != TOK_IDENTIFIER) {
 			break;
 		}
+
+		/* build a new left_node for next_expr with the metadata of
+		 * the current field list line. assuming that the line
+		 * has the format [idents] : [type], this will be a binary
+		 * node using this exact format: [idents] : [type] */
+
+		/* get the identifier list separated by commas. */
+		idents = parse_identifier_list(parser);
+		token = parser_token(parser);
+		if (token->type != TOK_COLON) {
+			parser_error(parser,
+			             token,
+			             "COLON expected after field list");
+		}
+		type = parser_type(parser);
+
+		/* craft the node and add it to the list. */
+		left = new_binary(token, idents, type);
+
+		if (!root) {
+			root = new_binary(NULL, left, NULL);
+			next = root;
+		} else {
+			next->exp_right = new_binary(NULL, left, NULL);
+			next = next->exp_right;
+		}
+
+		/* there may be a semicolon here. */
+		token = parser_peek(parser);
+		if (token->type != TOK_SEMICOLON) {
+			return root;
+		}
+		parser_consume(parser, TOK_SEMICOLON);
+	}
+
+	/* Stage 2: case line -- if there is one at all. */
+	token = parser_peek(parser);
+	if (token->type == TOK_CASE) {
+		parser_consume(parser, TOK_CASE);
+
+		/* two choices: [case x : t of] or [case t of]
+		 * we will always craft a node rooted by of, with t on
+		 * right there should always be an identifier following
+		 * case, if that identifier is followed by : there is
+		 * another one, else should be an of. */
+		token = parser_token(parser);
+		if (token->type != TOK_IDENTIFIER) {
+			parser_error(parser,
+			             token,
+			             "Expected an identifier following "
+			             "the CASE");
+		}
+
+		tokenpeek = parser_token(parser);
+		switch (tokenpeek->type) {
+		case TOK_OF: /* [case t of] */
+			left = new_unary(tokenpeek, new_literal(token));
+			break;
+		case TOK_COLON: /* [case x : t of] */
+			left = new_binary(tokenpeek, NULL, new_literal(token));
+			token = parser_token(parser);
+			if (token->type != TOK_IDENTIFIER) {
+				parser_error(parser,
+				             token,
+				             "Expected an identifier following "
+				             "the COLON");
+			}
+
+			tokenpeek = parser_token(parser);
+			if (tokenpeek->type != TOK_OF) {
+				parser_error(parser,
+				             token,
+				             "Expected OF after secondd token");
+			}
+			left->token = tokenpeek;
+			left->exp_left = new_literal(token);
+			break;
+		default:
+			parser_error(parser,
+			             token,
+			             "Expected either a COLON or OF");
+		}
+
+		if (!root) {
+			root = new_binary(NULL, left, NULL);
+			next = root;
+		} else {
+			next->exp_right = new_binary(NULL, left, NULL);
+			next = next->exp_right;
+		}
+
+		/* and now comes a list of possible values for this case
+		 * with their field lists. it is mandatory to have at
+		 * least one, but there may be more. */
+		left = parser_field_list_branch(parser);
+		next->exp_right = new_binary(NULL, left, NULL);
+		next = next->exp_right;
+
+		for (;;) {
+			/* if a semicolon continues, there is still
+			 * more. */
+			token = parser_peek(parser);
+			if (token->type != TOK_SEMICOLON) {
+				break;
+			}
+
+			/* wait, there's more */
+			parser_consume(parser, TOK_SEMICOLON);
+			left = parser_field_list_branch(parser);
+			next->exp_right = new_binary(NULL, left, NULL);
+			next = next->exp_right;
+		}
+	} // closes if (token->type == TOK_CASE)
+
+	if (root == NULL) {
+		/* there should be at least something, either a field or
+		 * a case
+		 */
+		token = parser_peek(parser);
+		parser_error(parser,
+		             token,
+		             "There should be either IDENT or CASE");
 	}
 
 	return root;
+}
+
+expr_t *
+parser_variable(parser_t *parser)
+{
+	expr_t *root, *suffix = NULL, *ext = suffix;
+	token_t *token;
+
+	token = parser_token(parser);
+	if (token->type != TOK_IDENTIFIER) {
+		parser_error(parser,
+		             token,
+		             "Unexpected token is not an IDENTIFIER");
+	}
+
+	// TODO: should not allow an space here.
+	token = parser_peek(parser);
+	for (;;) {
+		switch (token->type) {
+		case TOK_CARET:
+			token = parser_token(parser);
+			if (suffix == NULL) {
+				suffix = new_unary(token, NULL);
+				ext = suffix;
+			} else {
+				ext->exp_left = new_unary(token, NULL);
+				ext = ext->exp_left;
+			}
+			break;
+		case TOK_LBRACKET:
+			token = parser_token(parser);
+			if (suffix == NULL) {
+			} else {
+			}
+			break;
+		case TOK_DOT:
+			token = parser_token(parser);
+			if (suffix == NULL) {
+				suffix = new_binary(token, NULL, NULL);
+				ext = suffix;
+			} else {
+				ext->exp_left = new_binary(token, NULL, NULL);
+				ext = ext->exp_left;
+			}
+			token = parser_token(parser);
+			if (token->type != TOK_IDENTIFIER) {
+				parser_error(parser,
+				             token,
+				             "Expected TOK_IDENTIFIER");
+			}
+			ext->exp_right = new_literal(token);
+			break;
+		default:
+			root = new_unary(token, suffix);
+			return root;
+		}
+	}
+
+	// Should not reach here!
+	return NULL;
 }
