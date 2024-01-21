@@ -4,8 +4,7 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED True)
 set(CMAKE_EXPORT_COMPILE_COMMANDS True)
 
-add_library(pa lib/parser.c lib/scanner.c lib/token.c)
-target_include_directories(pa PRIVATE include)
+add_subdirectory(lib)
 
 add_executable(repl utils/repl.c)
 target_include_directories(repl PRIVATE include)
