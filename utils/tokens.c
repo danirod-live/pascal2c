@@ -1,7 +1,8 @@
-#include "../scanner.h"
-#include "../token.h"
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "scanner.h"
+#include "token.h"
 
 static void
 print_token(token_t *tok)

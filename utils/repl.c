@@ -1,9 +1,10 @@
-#include "../parser.h"
-#include "../scanner.h"
-#include "../token.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "parser.h"
+#include "scanner.h"
+#include "token.h"
 
 #define BUFFER_SIZE 4096
 #define FGETS_SIZE 80
