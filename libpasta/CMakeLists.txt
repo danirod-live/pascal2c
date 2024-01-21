@@ -1,0 +1,4 @@
+cmake_minimum_required(VERSION 3.18)
+
+add_library(pasta parser.c parser-parameter-list.c scanner.c token.c)
+target_include_directories(pasta PRIVATE ${CMAKE_SOURCE_DIR}/include)
