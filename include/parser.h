@@ -32,6 +32,13 @@ typedef struct parser {
 parser_t *parser_new();
 void parser_load_tokens(parser_t *parser, scanner_t *scanner);
 void parser_dump(parser_t *parser);
+token_t *parser_peek(parser_t *parser);
+token_t *parser_token(parser_t *parser);
+void parser_consume(parser_t *parser, tokentype_t type);
+void __attribute__((noreturn))
+parser_error(parser_t *parser, token_t *token, char *error);
+
+expr_t *parse_identifier_list(parser_t *parser);
 
 expr_t *parser_identifier(parser_t *parser);
 expr_t *parser_unsigned_integer(parser_t *parser);
@@ -42,5 +49,6 @@ expr_t *parser_simple_type(parser_t *parser);
 expr_t *parser_type(parser_t *parser);
 expr_t *parser_field_list(parser_t *parser);
 expr_t *parser_variable(parser_t *parser);
+expr_t *parser_parameter_list(parser_t *parser);
 
 void dump_expr(expr_t *expr);

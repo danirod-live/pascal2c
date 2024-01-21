@@ -470,7 +470,7 @@ token_is_constant(token_t *token)
 	}
 }
 
-static expr_t *
+expr_t *
 parse_identifier_list(parser_t *parser)
 {
 	expr_t *root = NULL, *next = root;
