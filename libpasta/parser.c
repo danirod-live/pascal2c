@@ -36,16 +36,23 @@ print_token(token_t *tok)
 }
 
 static void
-dump_expr_impl(expr_t *expr, int padding)
+dump_expr_impl(expr_t *expr, int indent)
 {
+	int i;
+
 	if (!expr) {
 		return;
 	}
-	char *space = malloc(sizeof(char) * padding + 1);
-	memset(space, ' ', padding);
-	space[padding] = 0;
 
-	printf("%s", space);
+	for (i = 0; i < indent; i++) {
+		printf("|");
+		if (i == indent - 1) {
+			printf("- ");
+		} else {
+			printf("  ");
+		}
+	}
+
 	switch (expr->type) {
 	case BINARY:
 		printf("BINARY ");
@@ -61,9 +68,8 @@ dump_expr_impl(expr_t *expr, int padding)
 		break;
 	}
 	print_token(expr->token);
-	dump_expr_impl(expr->exp_left, padding + 2);
-	dump_expr_impl(expr->exp_right, padding + 2);
-	free(space);
+	dump_expr_impl(expr->exp_left, indent + 1);
+	dump_expr_impl(expr->exp_right, indent + 1);
 }
 
 void
