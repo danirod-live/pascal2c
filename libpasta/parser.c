@@ -492,35 +492,6 @@ token_is_constant(token_t *token)
 	}
 }
 
-expr_t *
-parse_identifier_list(parser_t *parser)
-{
-	expr_t *root = NULL, *next = root;
-	token_t *token;
-
-	for (;;) {
-		/* read the next identifier (it has to be an identifier). */
-		token = parser_peek(parser);
-		parser_consume(parser, TOK_IDENTIFIER);
-
-		/* add the token into the list of identifiers. */
-		if (!root) {
-			root = new_unary(token, NULL);
-			next = root;
-		} else {
-			next->exp_left = new_unary(token, NULL);
-			next = next->exp_left;
-		}
-
-		/* check if there are more tokens to parse. */
-		token = parser_peek(parser);
-		if (token->type != TOK_COMMA) {
-			return root;
-		}
-		parser_consume(parser, TOK_COMMA);
-	}
-}
-
 static expr_t *
 parse_constant_list(parser_t *parser)
 {
@@ -586,7 +557,7 @@ parser_field_list(parser_t *parser)
 		 * node using this exact format: [idents] : [type] */
 
 		/* get the identifier list separated by commas. */
-		idents = parse_identifier_list(parser);
+		idents = parser_identifier_list(parser);
 		token = parser_token(parser);
 		if (token->type != TOK_COLON) {
 			parser_error(parser,
