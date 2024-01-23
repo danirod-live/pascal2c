@@ -218,31 +218,6 @@ parser_identifier(parser_t *parser)
 	             "Token is of invalid type, expected IDENTIFIER");
 }
 
-static int
-is_clean_integer(char *number)
-{
-	while (number && *number) {
-		if (*number < '0' || *number > '9') {
-			return 0;
-		}
-		number++;
-	}
-	return 1;
-}
-
-expr_t *
-parser_unsigned_integer(parser_t *parser)
-{
-	token_t *token = parser_token(parser);
-	if (token->type == TOK_DIGIT) {
-		if (is_clean_integer(token->meta)) {
-			return new_literal(token);
-		}
-		parser_error(parser, token, "Expected integer");
-	}
-	parser_error(parser, token, "Token is of invalid type, expected DIGIT");
-}
-
 token_t *
 parser_validate_token(parser_t *parser, tokentype_t expected)
 {
@@ -260,16 +235,6 @@ parser_consume(parser_t *parser, tokentype_t type)
 	if (token->type != type) {
 		parser_error(parser, token, "Token is of invalid type");
 	}
-}
-
-expr_t *
-parser_unsigned_number(parser_t *parser)
-{
-	token_t *token = parser_token(parser);
-	if (token->type == TOK_DIGIT) {
-		return new_literal(token);
-	}
-	parser_error(parser, token, "Token is of invalid type, expected DIGIT");
 }
 
 expr_t *

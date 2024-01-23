@@ -4,6 +4,7 @@ add_library(pasta
 	parser.c
 	parser-common.c
 	parser-parameter-list.c
+	parser-unsigned-numint.c
 	scanner.c
 	token.c
 )
