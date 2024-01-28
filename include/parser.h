@@ -49,6 +49,7 @@ parser_t *parser_new();
 void parser_load_tokens(parser_t *parser, scanner_t *scanner);
 void parser_dump(parser_t *parser);
 token_t *parser_peek(parser_t *parser);
+token_t *parser_peek_far(parser_t *parser, unsigned int offt);
 token_t *parser_token(parser_t *parser);
 token_t *parser_token_expect(parser_t *, tokentype_t);
 void parser_consume(parser_t *parser, tokentype_t type);
@@ -66,6 +67,10 @@ expr_t *parser_simple_type(parser_t *parser);
 expr_t *parser_type(parser_t *parser);
 expr_t *parser_field_list(parser_t *parser);
 expr_t *parser_variable(parser_t *parser);
+expr_t *parser_expression(parser_t *parser);
+expr_t *parser_simple_expression(parser_t *parser);
+expr_t *parser_term(parser_t *parser);
+expr_t *parser_factor(parser_t *parser);
 expr_t *parser_parameter_list(parser_t *parser);
 
 void dump_expr(expr_t *expr);

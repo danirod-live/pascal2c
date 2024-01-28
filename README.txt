@@ -39,10 +39,10 @@ Parts of the compiler grammar that are implemented:
 - [x] Identifier
 - [x] Variable
 - [x] Unsigned number
-- [ ] Expression
-- [ ] Simple expression
-- [ ] Term
-- [ ] Factor
+- [x] Expression
+- [x] Simple expression
+- [x] Term
+- [x] Factor
 - [x] Unsigned constant
 - [x] Parameter list
 - [x] Unsigned integer
@@ -53,3 +53,8 @@ Parts of the compiler grammar that are implemented:
 - [ ] Statement
 - [ ] Block
 - [ ] Program
+
+
+Bugs:
+
+* parser_variable is not working (try "hello.world" or "hello[1]" and see)

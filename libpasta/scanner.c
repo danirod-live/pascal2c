@@ -375,14 +375,30 @@ scanner_next(scanner_t *scanner)
 		scanner_discard(scanner);
 		return alloc_token(TOK_EQUAL);
 	case '>':
-		scanner_discard(scanner);
-		return alloc_token(TOK_GREATER);
+		if (scanner_peekfar(scanner, 1) == '=') {
+			scanner_discard(scanner);
+			scanner_discard(scanner);
+			return alloc_token(TOK_GREATEQL);
+		} else {
+			scanner_discard(scanner);
+			return alloc_token(TOK_GREATER);
+		}
 	case '[':
 		scanner_discard(scanner);
 		return alloc_token(TOK_LBRACKET);
 	case '<':
-		scanner_discard(scanner);
-		return alloc_token(TOK_LESSER);
+		if (scanner_peekfar(scanner, 1) == '=') {
+			scanner_discard(scanner);
+			scanner_discard(scanner);
+			return alloc_token(TOK_LESSEQL);
+		} else if (scanner_peekfar(scanner, 1) == '>') {
+			scanner_discard(scanner);
+			scanner_discard(scanner);
+			return alloc_token(TOK_NEQUAL);
+		} else {
+			scanner_discard(scanner);
+			return alloc_token(TOK_LESSER);
+		}
 	case '(':
 		scanner_discard(scanner);
 		return alloc_token(TOK_LPAREN);

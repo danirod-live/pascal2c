@@ -201,6 +201,16 @@ parser_peek(parser_t *parser)
 }
 
 token_t *
+parser_peek_far(parser_t *parser, unsigned int offset)
+{
+	if (parser->pos + offset < parser->len) {
+		return parser->tokens[parser->pos + offset];
+	}
+	// TODO: devolver EOF
+	parser_error(parser, parser->tokens[parser->pos], "EOF");
+}
+
+token_t *
 parser_token(parser_t *parser)
 {
 	return parser->tokens[parser->pos++];
