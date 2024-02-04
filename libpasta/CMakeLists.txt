@@ -9,6 +9,7 @@ add_library(pasta
 	parser-parameter-list.c
 	parser-simple-type.c
 	parser-simple.c
+	parser-statement.c
 	parser-type.c
 	parser-variable.c
 	scanner.c
