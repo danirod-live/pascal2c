@@ -15,8 +15,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "parser.h"
-#include "token.h"
-#include <stdio.h>
 
 /*
  * Expression nodes for the parameter lists.
@@ -145,7 +143,7 @@ do_parse_idtype_block(parser_t *parser)
 	if (parser_peek(parser)->type == TOK_VAR)
 		var = new_literal(parser_token(parser));
 	parlist = parser_identifier_list(parser);
-	parser_consume(parser, TOK_COLON);
+	parser_token_expect(parser, TOK_COLON);
 	type = parser_token_expect(parser, TOK_IDENTIFIER);
 
 	if (var == NULL) {

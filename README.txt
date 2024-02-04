@@ -47,7 +47,7 @@ Parts of the compiler grammar that are implemented:
 - [x] Parameter list
 - [x] Unsigned integer
 - [x] Constant
-- [ ] Simple type
+- [x] Simple type
 - [x] Field list
 - [x] Type
 - [ ] Statement

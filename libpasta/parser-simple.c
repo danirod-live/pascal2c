@@ -14,21 +14,28 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
 #include "parser.h"
-#include "token.h"
 
 /*
- * Expression nodes for unsigned number and unsigned integer.
+ * Expression nodes for simple types.
  *
- * They are here since they look similar. The only difference is that
- * number accepts any kind of scientific number while integer only
- * accepts strings made of digits.
+ * These are types that we actually implemented in the scanner, but since
+ * they need to interact with other expressions, the functions defined
+ * here wrap them into expressions.
  *
- * Note that the parsing of numbers is already done at scanner level.
- * Therefore, these functions only have to wrap the tokens into a
- * proper expression node.
+ * - parser_identifier, to wrap a TOK_IDENTIFIER.
+ * - parser_unsigned_number for unsigned numbers, which are unsigned
+ *   scientific numbers like 4, 4e11, 4.22e11, 4e-11, 4.22e-11, 4.22e+11
+ *   or 4.22e-11.
+ * - parser_unsigned_integer for numbers that only accepts a sequence
+ *   of digits, but no commas nor scientific notation.
  */
+
+expr_t *
+parser_identifier(parser_t *parser)
+{
+	return new_literal(parser_token_expect(parser, TOK_IDENTIFIER));
+}
 
 expr_t *
 parser_unsigned_number(parser_t *parser)

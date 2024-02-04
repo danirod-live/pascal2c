@@ -1,17 +1,48 @@
+/* libpasta -- an AST parser for Pascal
+ * Copyright (C) 2024 Dani Rodríguez <dani@danirod.es>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 #include "parser.h"
-#include "token.h"
 
-static int
-parser_follows_plus_or_minus(parser_t *parser)
-{
-	token_t *token = parser_peek(parser);
-	return token->type == TOK_PLUS || token->type == TOK_MINUS;
-}
+static int simex_follows_plusminus(parser_t *parser);
 
+/*
+ * Expression node for an expression.
+ *
+ * These kind of nodes represents the lowest operator precedende for an entire
+ * expression tree. It is one or two simple expressions, which have a higher
+ * precedence. If there are two simple expressions, they will be linked by an
+ * operator: < > <= >= = <>.
+ *
+ * For expressions that are only made of simple expressions, the node will be a
+ * grouping with the inner simple expression. Such is the case for "3":
+ *
+ * - GROUPING: The simple expression for "3"
+ *
+ * When the expression has two simple expressions joined by an operator, the
+ * node will be a binary, with the operator as token and both operands as left
+ * and right child. This is the case for "x > 4":
+ *
+ * - BINARY (GREATER)
+ *   - GROUPING: The simple expression that represents x
+ *   - GROUPING: The simple expression that represents 4
+ */
 expr_t *
 parser_expression(parser_t *parser)
 {
-	expr_t *expr;
+	expr_t *expr, *second;
 	token_t *token;
 
 	expr = parser_simple_expression(parser);
@@ -25,27 +56,68 @@ parser_expression(parser_t *parser)
 	case TOK_NEQUAL:
 	case TOK_IN:
 		parser_token(parser);
-		return new_binary(token,
-		                  expr,
-		                  parser_simple_expression(parser));
+		second = parser_simple_expression(parser);
+		return new_binary(token, expr, second);
 	default:
 		return new_grouping(expr);
 	}
 }
 
+/*
+ * Expression nodes for the simple expression.
+ *
+ * A simple expression contains one or more terms, which have higher precedende
+ * than simple expressions, separated between + - and OR.  In a similar fashion
+ * to other members of a global expression tree, it is either a grouping of a
+ * term, or a binary of two terms with the operator as an apex.
+ *
+ * The oddity in simple expressions is that they optionally accept a plus and a
+ * minus in front of the first term. To simplify the operation, at the moment
+ * if the first element is one of these optional operators, we take it out and
+ * yield an unary of the prefix and the remaining expression.
+ *
+ * As an example, for the simple expression "2", you get the following:
+ *
+ * - GROUPING: the term that represents "2"
+ *
+ * For the simple expression "2 + 3", you get the following:
+ *
+ * - BINARY (PLUS)
+ *   - GROUPING: The term that represents 2
+ *   - GROUPING: The term that represents 3
+ *
+ * Multiple terms form nested binary nodes, such as "1 + 2 + 3":
+ *
+ * - BINARY (PLUS)
+ *   - GROUPING: The term that represents 1
+ *   - BINARY (PLUS)
+ *     - GROUPING: The term that represents 2
+ *     - GROUPING: The term that represents 3
+ *
+ * In the following case, the expression is "-4 + 2 OR 3":
+ *
+ * - UNARY (-)
+ *   - BINARY (PLUS)
+ *     - GROUPING: The term that represents 4
+ *     - BINARY (OR)
+ *       - GROUPING: The term that represents 2
+ *       - GROUPING: The term that represents 3
+ */
 expr_t *
 parser_simple_expression(parser_t *parser)
 {
 	expr_t *expr;
 	token_t *token;
 
-	/* If start with + or -, take everything. */
-	if (parser_follows_plus_or_minus(parser)) {
+	/* Unwrap a plus minus prefix. Note that in the graphs this is
+	 * represented as an arrow before the first node. To make this easier to
+	 * solve, I do this recursively. However, keep in mind that no two
+	 * consecutive operators are allowed, so we must check that a valid term
+	 * symbol follows the prefix. */
+	if (simex_follows_plusminus(parser)) {
 		token = parser_token(parser);
-		if (parser_follows_plus_or_minus(parser)) {
-			parser_error(parser,
-			             token,
-			             "Unexpected double operator");
+		if (simex_follows_plusminus(parser)) {
+			parser_error(parser, token, "double operator");
 		}
 		return new_unary(token, parser_simple_expression(parser));
 	}
@@ -57,10 +129,8 @@ parser_simple_expression(parser_t *parser)
 	case TOK_MINUS:
 	case TOK_OR:
 		parser_token(parser);
-		if (parser_follows_plus_or_minus(parser)) {
-			parser_error(parser,
-			             token,
-			             "Unexpected double operator");
+		if (simex_follows_plusminus(parser)) {
+			parser_error(parser, token, "double operator");
 		}
 		return new_binary(token,
 		                  expr,
@@ -211,4 +281,12 @@ parser_factor(parser_t *parser)
 	}
 
 	return expr;
+}
+
+/* Returns true if peeking the parser shows a plus or a minus. */
+static int
+simex_follows_plusminus(parser_t *parser)
+{
+	token_t *token = parser_peek(parser);
+	return token->type == TOK_PLUS || token->type == TOK_MINUS;
 }

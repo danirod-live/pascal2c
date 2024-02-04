@@ -14,10 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include <stdio.h>
-
 #include "parser.h"
-#include "token.h"
 
 /**
  * Gets the next token from the parser input, but also tests that it is
@@ -31,9 +28,7 @@ parser_token_expect(parser_t *parser, tokentype_t type)
 
 	token = parser_token(parser);
 	if (token->type != type) {
-		parser_error(parser,
-		             token,
-		             "Token of this type is not expected");
+		parser_error(parser, token, "Token is not of expected type");
 	}
 	return token;
 }
@@ -72,7 +67,7 @@ parser_identifier_list(parser_t *parser)
 		if (token->type != TOK_COMMA) {
 			break;
 		}
-		parser_consume(parser, TOK_COMMA);
+		parser_token_expect(parser, TOK_COMMA);
 	}
 	return root;
 }
