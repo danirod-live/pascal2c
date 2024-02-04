@@ -103,7 +103,7 @@ evalexpr()
 	if ((scanner = scanner_init(buffer, length)) != NULL) {
 		parser = parser_new();
 		parser_load_tokens(parser, scanner);
-		dump_expr(parser_expression(parser));
+		dump_expr(parser_statement(parser));
 		scanner_free(scanner);
 		return 0;
 	}

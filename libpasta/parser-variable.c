@@ -15,64 +15,93 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "parser.h"
+#include "token.h"
+
+static int has_extra(parser_t *parser);
+static expr_t *extra(parser_t *parser);
+static expr_t *expression_list(parser_t *parser);
 
 /* TODO: How does this work? */
 expr_t *
 parser_variable(parser_t *parser)
 {
-	expr_t *root, *suffix = NULL, *ext = suffix;
+	token_t *ident = parser_token_expect(parser, TOK_IDENTIFIER);
+	expr_t *nested;
+
+	/* Check if the identifier comes alone or not. */
+	if (has_extra(parser)) {
+		nested = extra(parser);
+		return new_unary(ident, nested);
+	} else {
+		return new_literal(ident);
+	}
+}
+
+static expr_t *
+extra(parser_t *parser)
+{
+	token_t *token;
+	expr_t *expr;
+
+	/* We are protected by has_extra, take the token. */
+	token = parser_token(parser);
+	expr = new_binary(token, NULL, NULL);
+
+	/* Some token types also have meta. */
+	if (token->type == TOK_DOT) {
+		expr->exp_left = parser_identifier(parser);
+	} else if (token->type == TOK_LBRACKET) {
+		expr->exp_left = expression_list(parser);
+	}
+
+	/* Still more parts. */
+	if (has_extra(parser)) {
+		expr->exp_right = extra(parser);
+	}
+
+	return expr;
+}
+
+static int
+has_extra(parser_t *parser)
+{
+	token_t *tok = parser_peek(parser);
+	return tok->type == TOK_CARET || tok->type == TOK_DOT
+	       || tok->type == TOK_LBRACKET;
+}
+
+static expr_t *
+expression_list(parser_t *parser)
+{
+	expr_t *root = NULL, *next, *expr;
 	token_t *token;
 
-	token = parser_token(parser);
-	if (token->type != TOK_IDENTIFIER) {
-		parser_error(parser,
-		             token,
-		             "Unexpected token is not an IDENTIFIER");
-	}
-
-	// TODO: should not allow an space here.
-	token = parser_peek(parser);
 	for (;;) {
-		switch (token->type) {
-		case TOK_CARET:
+		expr = parser_expression(parser);
+		token = parser_peek(parser);
+
+		if (token->type == TOK_RBRACKET) {
 			token = parser_token(parser);
-			if (suffix == NULL) {
-				suffix = new_unary(token, NULL);
-				ext = suffix;
+
+			/* No more arguments after the one we currently have. */
+			if (root == NULL) {
+				root = new_unary(token, expr);
 			} else {
-				ext->exp_left = new_unary(token, NULL);
-				ext = ext->exp_left;
+				next->exp_right = new_unary(token, expr);
 			}
-			break;
-		case TOK_LBRACKET:
-			token = parser_token(parser);
-			if (suffix == NULL) {
-			} else {
-			}
-			break;
-		case TOK_DOT:
-			token = parser_token(parser);
-			if (suffix == NULL) {
-				suffix = new_binary(token, NULL, NULL);
-				ext = suffix;
-			} else {
-				ext->exp_left = new_binary(token, NULL, NULL);
-				ext = ext->exp_left;
-			}
-			token = parser_token(parser);
-			if (token->type != TOK_IDENTIFIER) {
-				parser_error(parser,
-				             token,
-				             "Expected TOK_IDENTIFIER");
-			}
-			ext->exp_right = new_literal(token);
-			break;
-		default:
-			root = new_unary(token, suffix);
 			return root;
+		} else if (token->type == TOK_COMMA) {
+			token = parser_token(parser);
+
+			if (root == NULL) {
+				root = new_binary(token, expr, NULL);
+				next = root;
+			} else {
+				next->exp_right = new_binary(token, expr, NULL);
+				next = next->exp_right;
+			}
+		} else {
+			parser_error(parser, token, "Unexpected token");
 		}
 	}
-
-	// Should not reach here!
-	return NULL;
 }
