@@ -17,6 +17,7 @@
 #include "parser.h"
 
 static int simex_follows_plusminus(parser_t *parser);
+static expr_t *clean_expression(expr_t *expression);
 
 /*
  * Expression node for an expression.
@@ -59,7 +60,7 @@ parser_expression(parser_t *parser)
 		second = parser_simple_expression(parser);
 		return new_binary(token, expr, second);
 	default:
-		return new_grouping(expr);
+		return clean_expression(new_grouping(expr));
 	}
 }
 
@@ -136,7 +137,7 @@ parser_simple_expression(parser_t *parser)
 		                  expr,
 		                  parser_simple_expression(parser));
 	default:
-		return new_grouping(expr);
+		return clean_expression(new_grouping(expr));
 	}
 }
 
@@ -162,7 +163,7 @@ parser_term(parser_t *parser)
 		parser_token(parser);
 		return new_binary(token, factor, parser_term(parser));
 	default:
-		return new_grouping(factor);
+		return clean_expression(new_grouping(factor));
 	}
 }
 
@@ -289,4 +290,18 @@ simex_follows_plusminus(parser_t *parser)
 {
 	token_t *token = parser_peek(parser);
 	return token->type == TOK_PLUS || token->type == TOK_MINUS;
+}
+
+static expr_t *
+clean_expression(expr_t *expr)
+{
+	expr_t *nested;
+
+	if (expr->type == GROUPING && expr->exp_left->type == GROUPING) {
+		nested = expr->exp_left;
+		expr_free(expr);
+		return clean_expression(nested);
+	}
+
+	return expr;
 }

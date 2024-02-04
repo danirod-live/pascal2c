@@ -37,6 +37,7 @@ expr_t *new_unary(token_t *t, expr_t *expr);
 expr_t *new_binary(token_t *t, expr_t *left, expr_t *right);
 expr_t *new_grouping(expr_t *exp);
 expr_t *new_literal(token_t *lit);
+void expr_free(expr_t *expr);
 
 typedef struct parser {
 	token_t **tokens;

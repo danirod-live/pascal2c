@@ -75,6 +75,12 @@ dump_expr(expr_t *expr)
 	dump_expr_impl(expr, 0);
 }
 
+void
+expr_free(expr_t *expr)
+{
+	free(expr);
+}
+
 expr_t *
 new_unary(token_t *t, expr_t *expr)
 {
