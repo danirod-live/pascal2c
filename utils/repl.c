@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "parser.h"
 #include "scanner.h"
@@ -24,6 +25,54 @@
 
 #define BUFFER_SIZE 4096
 #define FGETS_SIZE 80
+
+#define DEFAULT_EXPRESSION_NODE "statement"
+
+struct expfunc_type {
+	const char *type;
+	expr_t *(*callback)(parser_t *);
+	const char *desc;
+};
+
+static struct expfunc_type expfunc_list[] = {
+    {"identifier", parser_identifier, "Identifiers"},
+    {"unsigned_integer", parser_unsigned_integer, "Unsigned integers"},
+    {"unsigned_number", parser_unsigned_number, "Unsigned numbers"},
+    {"unsigned_constant", parser_unsigned_constant, "Unsigned constant"},
+    {"constant", parser_constant, "Constant"},
+    {"simple_type", parser_simple_type, "Simple type"},
+    {"type", parser_type, "Type"},
+    {"field_list", parser_field_list, "Field list"},
+    {"variable", parser_variable, "Variable"},
+    {"expression", parser_expression, "Expression"},
+    {"simple_expression", parser_simple_expression, "Simple expression"},
+    {"term", parser_term, "Term"},
+    {"factor", parser_factor, "Factor"},
+    {"parameter_list", parser_parameter_list, "Parameter list"},
+    {"statement", parser_statement, "Statement"},
+    {0, 0, 0},
+};
+
+#define MODE_UNKNOWN 0
+#define MODE_TOKENS 1
+#define MODE_EXPRS 2
+
+static int func_mode = MODE_UNKNOWN;
+static char *func_expr_type = NULL;
+static expr_t *(*func_expr_cb)(parser_t *);
+
+static struct expfunc_type *
+get_desired_expfunc(char *type)
+{
+	struct expfunc_type *expr = expfunc_list;
+	while (expr->type != 0) {
+		if (!strcmp(type, expr->type)) {
+			return expr;
+		}
+		expr++;
+	}
+	return NULL;
+}
 
 static char buffer[BUFFER_SIZE];
 
@@ -103,7 +152,7 @@ evalexpr()
 	if ((scanner = scanner_init(buffer, length)) != NULL) {
 		parser = parser_new();
 		parser_load_tokens(parser, scanner);
-		dump_expr(parser_statement(parser));
+		dump_expr(func_expr_cb(parser));
 		scanner_free(scanner);
 		return 0;
 	}
@@ -140,37 +189,64 @@ void
 usage()
 {
 	puts("Flags:");
-	puts(" --tokens: read in tokens mode");
-	puts(" --exprs: read in expressions mode");
-	puts(" --multiline: don't stop after a line break");
+	puts(" -t: read in tokens mode");
+	puts(" -e=<node>: read in expressions mode of type <node>");
 }
-
-#define MODE_TOKENS 1
-#define MODE_EXPRS 2
 
 int
 main(int argc, char **argv)
 {
-	int mode = MODE_TOKENS;
-	if (argc >= 2) {
-		if (!strncmp(argv[1], "--tokens", 10)) {
-			mode = MODE_TOKENS;
-		} else if (!strncmp(argv[1], "--exprs", 10)) {
-			mode = MODE_EXPRS;
-		} else {
-			printf("Invalid argument: %s", argv[1]);
+	int c;
+
+	while ((c = getopt(argc, argv, "te::h")) != -1) {
+		switch (c) {
+		case 't':
+			if (func_mode != MODE_UNKNOWN) {
+				puts("Provide a single -t or -e");
+				return 1;
+			}
+			func_mode = MODE_TOKENS;
+			break;
+		case 'e':
+			if (func_mode != MODE_UNKNOWN) {
+				puts("Provide a single -t or -e");
+				return 1;
+			}
+			func_mode = MODE_EXPRS;
+			func_expr_type = optarg;
+			break;
+		case 'h':
 			usage();
+			break;
+		case '?':
+			printf("tenemos un problema. c = %d\n", c);
 			return 1;
+			break;
 		}
 	}
-	if (mode == MODE_TOKENS) {
+
+	if (func_mode == MODE_UNKNOWN) {
+		usage();
+	} else if (func_mode == MODE_TOKENS) {
 		while (!readtokenloop())
 			;
-	} else if (mode == MODE_EXPRS) {
+	} else if (func_mode == MODE_EXPRS) {
+		if (func_expr_type == NULL) {
+			func_expr_type = DEFAULT_EXPRESSION_NODE;
+		}
+		struct expfunc_type *type = get_desired_expfunc(func_expr_type);
+		if (type == NULL) {
+			printf("Unrecognised type: %s\n", func_expr_type);
+			return 1;
+		}
+		func_expr_cb = type->callback;
+
 		puts("Entering expression mode. Type Pascal code to be "
 		     "evaluated.\n"
-		     "End your expression with an empty line to submit to the "
+		     "End your expression with an empty line to submit "
+		     "to the "
 		     "parser.");
+		printf("Expression mode: %s\n", type->desc);
 		while (!readexprloop())
 			;
 	}
