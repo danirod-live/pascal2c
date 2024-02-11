@@ -1,0 +1,16 @@
+UNARY TOK_IDENTIFIER(hello)
+|- BINARY TOK_DOT
+|  |- LITERAL TOK_IDENTIFIER(world)
+|  |- BINARY TOK_LBRACKET
+|  |  |- UNARY TOK_RBRACKET
+|  |  |  |- GROUPING |  |  |  |  |- LITERAL TOK_DIGIT(1)
+|  |  |- BINARY TOK_DOT
+|  |  |  |- LITERAL TOK_IDENTIFIER(inside)
+|  |  |  |- BINARY TOK_CARET
+|  |  |  |  |- BINARY TOK_DOT
+|  |  |  |  |  |- LITERAL TOK_IDENTIFIER(grid)
+|  |  |  |  |  |- BINARY TOK_LBRACKET
+|  |  |  |  |  |  |- BINARY TOK_COMMA
+|  |  |  |  |  |  |  |- GROUPING |  |  |  |  |  |  |  |  |- LITERAL TOK_DIGIT(2)
+|  |  |  |  |  |  |  |- UNARY TOK_RBRACKET
+|  |  |  |  |  |  |  |  |- GROUPING |  |  |  |  |  |  |  |  |  |- LITERAL TOK_DIGIT(4)
