@@ -60,6 +60,7 @@ static struct expfunc_type expfunc_list[] = {
 static int func_mode = MODE_UNKNOWN;
 static char *func_expr_type = NULL;
 static expr_t *(*func_expr_cb)(parser_t *);
+static int func_quiet = 0;
 
 static struct expfunc_type *
 get_desired_expfunc(char *type)
@@ -162,7 +163,8 @@ evalexpr()
 static int
 readtokenloop()
 {
-	printf("> ");
+	if (isatty(0))
+		printf("> ");
 	if (readkeyb() == 0) {
 		return 1;
 	}
@@ -175,7 +177,8 @@ readtokenloop()
 static int
 readexprloop()
 {
-	printf("> ");
+	if (isatty(0))
+		printf("> ");
 	if (readkeyb() == 0) {
 		return 1;
 	}
@@ -198,7 +201,7 @@ main(int argc, char **argv)
 {
 	int c;
 
-	while ((c = getopt(argc, argv, "te::h")) != -1) {
+	while ((c = getopt(argc, argv, "te::hq")) != -1) {
 		switch (c) {
 		case 't':
 			if (func_mode != MODE_UNKNOWN) {
@@ -217,6 +220,9 @@ main(int argc, char **argv)
 			break;
 		case 'h':
 			usage();
+			break;
+		case 'q':
+			func_quiet = 1;
 			break;
 		case '?':
 			printf("tenemos un problema. c = %d\n", c);
@@ -241,12 +247,14 @@ main(int argc, char **argv)
 		}
 		func_expr_cb = type->callback;
 
-		puts("Entering expression mode. Type Pascal code to be "
-		     "evaluated.\n"
-		     "End your expression with an empty line to submit "
-		     "to the "
-		     "parser.");
-		printf("Expression mode: %s\n", type->desc);
+		if (!func_quiet) {
+			puts("Entering expression mode. Type Pascal code to be "
+			     "evaluated.\n"
+			     "End your expression with an empty line to submit "
+			     "to the "
+			     "parser.");
+			printf("Expression mode: %s\n", type->desc);
+		}
 		while (!readexprloop())
 			;
 	}
