@@ -33,6 +33,7 @@ typedef enum tokentype {
 	TOK_CONST,
 	TOK_DIGIT,
 	TOK_DIV,
+	TOK_DO,
 	TOK_DOLLAR,
 	TOK_DOT,
 	TOK_DOTDOT,
@@ -70,6 +71,7 @@ typedef enum tokentype {
 	TOK_THEN,
 	TOK_UNTIL,
 	TOK_VAR,
+	TOK_WHILE,
 } tokentype_t;
 
 typedef struct token {

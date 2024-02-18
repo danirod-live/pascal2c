@@ -26,6 +26,7 @@ static expr_t *ifthen(parser_t *parser);
 static expr_t *begin(parser_t *parser);
 static expr_t *repeat(parser_t *parser);
 static expr_t *repeat_stmts(parser_t *parser);
+static expr_t *whiledo(parser_t *parser);
 
 expr_t *
 parser_statement(parser_t *parser)
@@ -48,6 +49,8 @@ parser_statement(parser_t *parser)
 		return ifthen(parser);
 	case TOK_REPEAT:
 		return repeat(parser);
+	case TOK_WHILE:
+		return whiledo(parser);
 	case TOK_END: /* Most probably this is an empty expression. */
 	case TOK_SEMICOLON:
 		return NULL;
@@ -238,4 +241,14 @@ repeat_stmts(parser_t *parser)
 			             "Expected semicolon or until");
 		}
 	}
+}
+
+static expr_t *
+whiledo(parser_t *parser)
+{
+	token_t *whiletoken = parser_token_expect(parser, TOK_WHILE);
+	expr_t *whileexpr = parser_expression(parser);
+	parser_token_expect(parser, TOK_DO);
+	expr_t *whilestmt = parser_statement(parser);
+	return new_binary(whiletoken, whileexpr, whilestmt);
 }

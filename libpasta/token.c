@@ -50,6 +50,7 @@ struct tokeninfo tokens[] = {
     TOKENINFO(TOK_CTRLCODE),
     TOKENINFO(TOK_DIGIT),
     TOKENINFO(TOK_DIV),
+    TOKENINFO(TOK_DO),
     TOKENINFO(TOK_DOLLAR),
     TOKENINFO(TOK_DOT),
     TOKENINFO(TOK_DOTDOT),
@@ -87,18 +88,24 @@ struct tokeninfo tokens[] = {
     TOKENINFO(TOK_THEN),
     TOKENINFO(TOK_UNTIL),
     TOKENINFO(TOK_VAR),
+    TOKENINFO(TOK_WHILE),
     {0, 0},
 };
 
 struct keyword keywords[] = {
-    {"and", TOK_AND},       {"array", TOK_ARRAY},     {"begin", TOK_BEGIN},
-    {"case", TOK_CASE},     {"div", TOK_DIV},         {"else", TOK_ELSE},
-    {"end", TOK_END},       {"file", TOK_FILE},       {"if", TOK_IF},
-    {"in", TOK_IN},         {"mod", TOK_MOD},         {"nil", TOK_NIL},
-    {"not", TOK_NOT},       {"of", TOK_OF},           {"or", TOK_OR},
-    {"packed", TOK_PACKED}, {"program", TOK_PROGRAM}, {"record", TOK_RECORD},
-    {"repeat", TOK_REPEAT}, {"set", TOK_SET},         {"then", TOK_THEN},
-    {"until", TOK_UNTIL},   {"var", TOK_VAR},         {0, 0},
+    {"and", TOK_AND},       {"array", TOK_ARRAY},
+    {"begin", TOK_BEGIN},   {"case", TOK_CASE},
+    {"div", TOK_DIV},       {"do", TOK_DO},
+    {"else", TOK_ELSE},     {"end", TOK_END},
+    {"file", TOK_FILE},     {"if", TOK_IF},
+    {"in", TOK_IN},         {"mod", TOK_MOD},
+    {"nil", TOK_NIL},       {"not", TOK_NOT},
+    {"of", TOK_OF},         {"or", TOK_OR},
+    {"packed", TOK_PACKED}, {"program", TOK_PROGRAM},
+    {"record", TOK_RECORD}, {"repeat", TOK_REPEAT},
+    {"set", TOK_SET},       {"then", TOK_THEN},
+    {"until", TOK_UNTIL},   {"var", TOK_VAR},
+    {"while", TOK_WHILE},   {0, 0},
 };
 
 static void
