@@ -99,25 +99,33 @@ assignment(parser_t *parser)
 static expr_t *
 procedure(parser_t *parser)
 {
-	expr_t *ident = parser_identifier(parser);
+	expr_t *args, *ident = parser_identifier(parser);
 	token_t *token = parser_peek(parser);
 	if (token->type == TOK_LPAREN) {
 		/* Arguments of the function call. */
-		return new_binary(token, ident, arguments(parser));
-	} else {
-		return ident;
+		args = arguments(parser);
+		if (args != NULL) {
+			return new_binary(token, ident, args);
+		}
 	}
+	return ident;
 }
 
 static expr_t *
 arguments(parser_t *parser)
 {
-	token_t *lparen = parser_token_expect(parser, TOK_LPAREN);
-	token_t *following;
-	expr_t *root = new_binary(lparen, NULL, NULL);
-	expr_t *expr;
-	expr_t *next = root;
+	token_t *following, *lparen = parser_token_expect(parser, TOK_LPAREN);
+	expr_t *root, *expr, *next;
 
+	/* If the parenthesis are empty, there are no arguments. */
+	following = parser_peek(parser);
+	if (following->type == TOK_RPAREN) {
+		parser_token_expect(parser, TOK_RPAREN);
+		return NULL;
+	}
+
+	root = new_binary(lparen, NULL, NULL);
+	next = root;
 	for (;;) {
 		expr = parser_expression(parser);
 		next->exp_left = expr;
