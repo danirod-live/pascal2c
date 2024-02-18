@@ -22,6 +22,7 @@ static expr_t *assignment_or_procedure(parser_t *parser);
 static expr_t *assignment(parser_t *parser);
 static expr_t *procedure(parser_t *parser);
 static expr_t *arguments(parser_t *parser);
+static expr_t *ifthen(parser_t *parser);
 static expr_t *begin(parser_t *parser);
 
 expr_t *
@@ -41,6 +42,8 @@ parser_statement(parser_t *parser)
 		return assignment_or_procedure(parser);
 	case TOK_BEGIN:
 		return begin(parser);
+	case TOK_IF:
+		return ifthen(parser);
 	case TOK_END: /* Most probably this is an empty expression. */
 	case TOK_SEMICOLON:
 		return NULL;
@@ -157,4 +160,25 @@ begin(parser_t *parser)
 			parser_error(parser, following, "Unexpected token");
 		}
 	}
+}
+
+static expr_t *
+ifthen(parser_t *parser)
+{
+	token_t *iftoken = parser_token_expect(parser, TOK_IF);
+	expr_t *condition = parser_expression(parser);
+	token_t *thentoken = parser_token_expect(parser, TOK_THEN);
+	expr_t *iftrue = parser_statement(parser);
+	token_t *maybeelse = parser_peek(parser);
+
+	expr_t *thenbranch = new_binary(thentoken, iftrue, NULL);
+	expr_t *root = new_binary(iftoken, condition, thenbranch);
+
+	if (maybeelse->type == TOK_ELSE) {
+		token_t *elsetoken = parser_token_expect(parser, TOK_ELSE);
+		expr_t *iffalse = parser_statement(parser);
+		thenbranch->exp_right = new_unary(elsetoken, iffalse);
+	}
+
+	return root;
 }
