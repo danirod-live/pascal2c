@@ -60,6 +60,7 @@ typedef enum tokentype {
 	TOK_PLUS,
 	TOK_PROGRAM,
 	TOK_RECORD,
+	TOK_REPEAT,
 	TOK_RBRACKET,
 	TOK_RPAREN,
 	TOK_SET,
@@ -67,6 +68,7 @@ typedef enum tokentype {
 	TOK_STRING,
 	TOK_SEMICOLON,
 	TOK_THEN,
+	TOK_UNTIL,
 	TOK_VAR,
 } tokentype_t;
 

@@ -24,6 +24,8 @@ static expr_t *procedure(parser_t *parser);
 static expr_t *arguments(parser_t *parser);
 static expr_t *ifthen(parser_t *parser);
 static expr_t *begin(parser_t *parser);
+static expr_t *repeat(parser_t *parser);
+static expr_t *repeat_stmts(parser_t *parser);
 
 expr_t *
 parser_statement(parser_t *parser)
@@ -44,6 +46,8 @@ parser_statement(parser_t *parser)
 		return begin(parser);
 	case TOK_IF:
 		return ifthen(parser);
+	case TOK_REPEAT:
+		return repeat(parser);
 	case TOK_END: /* Most probably this is an empty expression. */
 	case TOK_SEMICOLON:
 		return NULL;
@@ -189,4 +193,49 @@ ifthen(parser_t *parser)
 	}
 
 	return root;
+}
+
+static expr_t *
+repeat(parser_t *parser)
+{
+	token_t *repeattoken = parser_token_expect(parser, TOK_REPEAT);
+	expr_t *statements = repeat_stmts(parser);
+	token_t *untilkw = parser_token_expect(parser, TOK_UNTIL);
+	expr_t *condition = parser_expression(parser);
+	return new_binary(repeattoken,
+	                  statements,
+	                  new_unary(untilkw, condition));
+}
+
+static expr_t *
+repeat_stmts(parser_t *parser)
+{
+	expr_t *root = NULL, *next, *stmt;
+	token_t *token;
+
+	for (;;) {
+		stmt = parser_statement(parser);
+		token = parser_peek(parser);
+		if (token->type == TOK_SEMICOLON) {
+			parser_token_expect(parser, TOK_SEMICOLON);
+			if (root == NULL) {
+				root = new_binary(token, stmt, NULL);
+				next = root;
+			} else {
+				next->exp_right = new_binary(token, stmt, NULL);
+				next = next->exp_right;
+			}
+		} else if (token->type == TOK_UNTIL) {
+			if (root == NULL) {
+				root = new_grouping(stmt);
+			} else {
+				next->exp_right = new_grouping(stmt);
+			}
+			return root;
+		} else {
+			parser_error(parser,
+			             token,
+			             "Expected semicolon or until");
+		}
+	}
 }

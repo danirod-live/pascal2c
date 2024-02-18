@@ -78,28 +78,27 @@ struct tokeninfo tokens[] = {
     TOKENINFO(TOK_PROGRAM),
     TOKENINFO(TOK_RBRACKET),
     TOKENINFO(TOK_RECORD),
+    TOKENINFO(TOK_REPEAT),
     TOKENINFO(TOK_RPAREN),
     TOKENINFO(TOK_SEMICOLON),
     TOKENINFO(TOK_SET),
     TOKENINFO(TOK_SLASH),
     TOKENINFO(TOK_STRING),
     TOKENINFO(TOK_THEN),
+    TOKENINFO(TOK_UNTIL),
     TOKENINFO(TOK_VAR),
     {0, 0},
 };
 
 struct keyword keywords[] = {
-    {"and", TOK_AND},         {"array", TOK_ARRAY},
-    {"begin", TOK_BEGIN},     {"case", TOK_CASE},
-    {"div", TOK_DIV},         {"else", TOK_ELSE},
-    {"end", TOK_END},         {"file", TOK_FILE},
-    {"if", TOK_IF},           {"in", TOK_IN},
-    {"mod", TOK_MOD},         {"nil", TOK_NIL},
-    {"not", TOK_NOT},         {"of", TOK_OF},
-    {"or", TOK_OR},           {"packed", TOK_PACKED},
-    {"program", TOK_PROGRAM}, {"record", TOK_RECORD},
-    {"set", TOK_SET},         {"then", TOK_THEN},
-    {"var", TOK_VAR},         {0, 0},
+    {"and", TOK_AND},       {"array", TOK_ARRAY},     {"begin", TOK_BEGIN},
+    {"case", TOK_CASE},     {"div", TOK_DIV},         {"else", TOK_ELSE},
+    {"end", TOK_END},       {"file", TOK_FILE},       {"if", TOK_IF},
+    {"in", TOK_IN},         {"mod", TOK_MOD},         {"nil", TOK_NIL},
+    {"not", TOK_NOT},       {"of", TOK_OF},           {"or", TOK_OR},
+    {"packed", TOK_PACKED}, {"program", TOK_PROGRAM}, {"record", TOK_RECORD},
+    {"repeat", TOK_REPEAT}, {"set", TOK_SET},         {"then", TOK_THEN},
+    {"until", TOK_UNTIL},   {"var", TOK_VAR},         {0, 0},
 };
 
 static void
