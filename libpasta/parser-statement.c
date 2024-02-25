@@ -27,6 +27,13 @@ static expr_t *begin(parser_t *parser);
 static expr_t *repeat(parser_t *parser);
 static expr_t *repeat_stmts(parser_t *parser);
 static expr_t *whiledo(parser_t *parser);
+static expr_t *forloop(parser_t *parser);
+static expr_t *caseof(parser_t *parser);
+static expr_t *caselist(parser_t *parser);
+static expr_t *constlist(parser_t *parser);
+static expr_t *with(parser_t *parser);
+static expr_t *gotostmt(parser_t *parser);
+static expr_t *exitstmt(parser_t *parser);
 
 expr_t *
 parser_statement(parser_t *parser)
@@ -51,6 +58,16 @@ parser_statement(parser_t *parser)
 		return repeat(parser);
 	case TOK_WHILE:
 		return whiledo(parser);
+	case TOK_FOR:
+		return forloop(parser);
+	case TOK_CASE:
+		return caseof(parser);
+	case TOK_WITH:
+		return with(parser);
+	case TOK_GOTO:
+		return gotostmt(parser);
+	case TOK_EXIT:
+		return exitstmt(parser);
 	case TOK_END: /* Most probably this is an empty expression. */
 	case TOK_SEMICOLON:
 		return NULL;
@@ -251,4 +268,204 @@ whiledo(parser_t *parser)
 	parser_token_expect(parser, TOK_DO);
 	expr_t *whilestmt = parser_statement(parser);
 	return new_binary(whiletoken, whileexpr, whilestmt);
+}
+
+/*
+ * FOR
+ * |- <ident>
+ * |  |- TO | DOWNTO
+ * |     |- <start expr>
+ * |     |- <end expr>
+ * |-<expr>
+ */
+static expr_t *
+forloop(parser_t *parser)
+{
+	token_t *fortoken = parser_token_expect(parser, TOK_FOR);
+	expr_t *ident = parser_identifier(parser);
+	parser_token_expect(parser, TOK_ASSIGN);
+	expr_t *startexpr = parser_expression(parser);
+	token_t *todownto = parser_token(parser);
+	expr_t *endexpr = parser_expression(parser);
+	parser_token_expect(parser, TOK_DO);
+	expr_t *stmt = parser_statement(parser);
+
+	if (todownto->type != TOK_TO && todownto->type != TOK_DOWNTO) {
+		parser_error(parser, todownto, "Expected either TO or DOWNTO");
+	}
+
+	return new_binary(
+	    fortoken,
+	    new_unary(ident->token, new_binary(todownto, startexpr, endexpr)),
+	    stmt);
+}
+
+static expr_t *
+caseof(parser_t *parser)
+{
+	token_t *casetoken = parser_token_expect(parser, TOK_CASE);
+	expr_t *expr = parser_expression(parser);
+	parser_token_expect(parser, TOK_OF);
+	expr_t *cases = caselist(parser);
+	return new_binary(casetoken, expr, cases);
+}
+
+static expr_t *
+caselist(parser_t *parser)
+{
+	expr_t *root = NULL, *next;
+	expr_t *consts, *stmt, *caseitem;
+	token_t *colon, *separator;
+	for (;;) {
+		consts = constlist(parser);
+		colon = parser_token_expect(parser, TOK_COLON);
+		stmt = parser_statement(parser);
+		caseitem = new_binary(colon, consts, stmt);
+
+		separator = parser_token(parser);
+		if (root == NULL) {
+			root = new_binary(separator, caseitem, NULL);
+			next = root;
+		} else {
+			next->exp_right = new_binary(separator, caseitem, NULL);
+			next = next->exp_right;
+		}
+		switch (separator->type) {
+		case TOK_END:
+			// We are done here.
+			return root;
+		case TOK_SEMICOLON:
+			// We have another case.
+			break;
+		default:
+			parser_error(parser,
+			             separator,
+			             "Unexpected token here");
+		}
+	}
+}
+
+static expr_t *
+constlist(parser_t *parser)
+{
+	expr_t *root = NULL, *next;
+	expr_t *constant = parser_constant(parser);
+	token_t *peek = parser_peek(parser);
+	switch (peek->type) {
+	case TOK_COLON:
+		// This is the only const we have, so we return it.
+		return constant;
+	case TOK_COMMA:
+		// There is more than a const, so we have to group them.
+		break;
+	default:
+		parser_error(parser, peek, "Unexpected token inside case");
+	}
+
+	// If this line is reached, we have more than one const.
+	parser_token_expect(parser, TOK_COMMA);
+	root = new_binary(peek, constant, NULL);
+	next = root;
+
+	// Keep reading constants.
+	for (;;) {
+		constant = parser_constant(parser);
+		peek = parser_peek(parser);
+		switch (peek->type) {
+		case TOK_COLON:
+			next->exp_right = constant;
+			return root;
+		case TOK_COMMA:
+			parser_token_expect(parser, TOK_COMMA);
+			next->exp_right = new_binary(peek, constant, NULL);
+			next = next->exp_right;
+			break;
+		default:
+			parser_error(parser,
+			             peek,
+			             "Unexpected token inside case");
+		}
+	}
+}
+
+static expr_t *
+variablelist(parser_t *parser)
+{
+	expr_t *root = NULL, *next;
+	expr_t *var = parser_variable(parser);
+	token_t *sep = parser_peek(parser);
+
+	switch (sep->type) {
+	case TOK_COMMA:
+		// We have to read more.
+		parser_token(parser);
+		break;
+	case TOK_DO:
+		// Single variable.
+		return var;
+	default:
+		parser_error(parser, sep, "Unexpected token inside WITH");
+	}
+
+	root = new_binary(sep, var, NULL);
+	next = root;
+
+	for (;;) {
+		var = parser_variable(parser);
+		sep = parser_peek(parser);
+
+		switch (sep->type) {
+		case TOK_COMMA:
+			sep = parser_token(parser);
+			next->exp_right = new_binary(sep, var, NULL);
+			next = next->exp_right;
+			break;
+		case TOK_DO:
+			next->exp_right = var;
+			return root;
+		default:
+			parser_error(parser,
+			             sep,
+			             "Unexpected token inside WITH");
+		}
+	}
+}
+
+static expr_t *
+with(parser_t *parser)
+{
+	token_t *withword = parser_token_expect(parser, TOK_WITH);
+	expr_t *variables = variablelist(parser);
+	parser_token_expect(parser, TOK_DO);
+	expr_t *stmt = parser_statement(parser);
+	return new_binary(withword, variables, stmt);
+}
+
+static expr_t *
+gotostmt(parser_t *parser)
+{
+	token_t *gotoword = parser_token_expect(parser, TOK_GOTO);
+
+	// FIXME: maybe these days labels can be alphanumeric as well
+	expr_t *gotoaddr = parser_unsigned_integer(parser);
+	return new_unary(gotoword, gotoaddr);
+}
+
+static expr_t *
+exitstmt(parser_t *parser)
+{
+	token_t *exitword = parser_token(parser);
+	parser_token_expect(parser, TOK_LPAREN);
+
+	token_t *peek = parser_peek(parser);
+	expr_t *exitparam;
+	if (peek->type == TOK_PROGRAM) {
+		parser_token(parser);
+		exitparam = new_literal(peek);
+	} else {
+		exitparam = parser_identifier(parser);
+	}
+
+	parser_token_expect(parser, TOK_RPAREN);
+	return new_unary(exitword, exitparam);
 }
