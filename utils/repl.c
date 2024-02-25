@@ -102,7 +102,7 @@ readkeyb()
 		// skip whitespace at the beginning of the read line and treat
 		// empty strings as if no characters had been read
 		while (*pbuf_start == '\n' || *pbuf_start == '\r'
-		       || *pbuf_start == '\t' || *pbuf_start == ' ')
+		       || *pbuf_start == '\t')
 			pbuf_start++;
 		if (*pbuf_start == 0) {
 			break;
