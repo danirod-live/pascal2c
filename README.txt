@@ -58,3 +58,11 @@ Parts of the compiler grammar that are implemented:
 Bugs:
 
 * parser_variable is not working (try "hello.world" or "hello[1]" and see)
+
+* The following code fails and I don't know why. Expression type: field list Expression type: field list
+
+	CASE TipoEmpleado : Categoria OF
+		Directivo : (Departamento : String[32]; Personas : Integer);
+		Comercial : (Ventas : Integer; Comision : Real; ZonaActividad : Zona);
+		Produccion : (Supera20Anios : Boolean; AltoRiesgo : Boolean);
+	END

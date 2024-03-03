@@ -71,5 +71,7 @@ expr_t *parser_term(parser_t *parser);
 expr_t *parser_factor(parser_t *parser);
 expr_t *parser_parameter_list(parser_t *parser);
 expr_t *parser_statement(parser_t *parser);
+expr_t *parser_block(parser_t *parser);
+expr_t *parser_program(parser_t *parser);
 
 void dump_expr(expr_t *expr);

@@ -50,6 +50,8 @@ static struct expfunc_type expfunc_list[] = {
     {"factor", parser_factor, "Factor"},
     {"parameter_list", parser_parameter_list, "Parameter list"},
     {"statement", parser_statement, "Statement"},
+    {"block", parser_block, "Block"},
+    {"program", parser_program, "Program"},
     {0, 0, 0},
 };
 
