@@ -26,6 +26,7 @@ struct scanner {
 	char *buffer;
 	unsigned int len;
 	unsigned int pos;
+	unsigned int line, col;
 };
 
 /** returns the next character in the scanner without consuming it. */
@@ -49,10 +50,21 @@ scanner_peekfar(scanner_t *scanner, int offt)
 }
 
 static void
+scanner_advance(scanner_t *scanner)
+{
+	if (scanner->buffer[scanner->pos] == '\n') {
+		scanner->line++;
+		scanner->col = 0;
+	}
+	scanner->pos++;
+	scanner->col++;
+}
+
+static void
 scanner_consume_until_char(scanner_t *scanner, char ch)
 {
 	while (scanner->buffer[scanner->pos] != ch)
-		scanner->pos++;
+		scanner_advance(scanner);
 }
 
 static void
@@ -60,8 +72,8 @@ consume_until_closing_bracket(scanner_t *scanner)
 {
 	// read until we find a closing bracket
 	while (scanner->buffer[scanner->pos] != '}')
-		scanner->pos++;
-	scanner->pos++; // skip the bracket itself
+		scanner_advance(scanner);
+	scanner_advance(scanner); // skip the bracket itself
 }
 
 static void
@@ -70,15 +82,16 @@ consume_until_closing_trigraph(scanner_t *scanner)
 	// read until we find a *)
 	for (;;) {
 		while (scanner->buffer[scanner->pos] != '*')
-			scanner->pos++;
+			scanner_advance(scanner);
 		if (scanner->buffer[scanner->pos + 1] == ')') {
 			// a real trigraph ending.
 			scanner->pos += 2;
+			scanner->col += 2;
 			return;
 		} else {
 			// not a real trigraph ending, just an alone asterisk
 			// skip it and continue reading characters
-			scanner->pos++;
+			scanner_advance(scanner);
 		}
 	}
 }
@@ -88,9 +101,9 @@ consume_slash_comment(scanner_t *scanner)
 {
 	// read until the end of the line
 	while (scanner->buffer[scanner->pos] != '\n')
-		scanner->pos++;
+		scanner_advance(scanner);
 	while (scanner->buffer[scanner->pos] == '\n')
-		scanner->pos++;
+		scanner_advance(scanner);
 }
 
 // check that the scanner points at a valid character, and moves the
@@ -111,7 +124,7 @@ scanner_clean(scanner_t *scanner)
 		case '\r':
 		case '\t':
 		case ' ':
-			scanner->pos++;
+			scanner_advance(scanner);
 			valid = 0;
 			break;
 		case '{':
@@ -137,25 +150,27 @@ scanner_clean(scanner_t *scanner)
 static void
 scanner_discard(scanner_t *scanner)
 {
-	scanner->pos++;
+	scanner_advance(scanner);
 	scanner_clean(scanner);
 }
 
 static token_t *
-alloc_token_with_meta(tokentype_t type, char *value)
+alloc_token_with_meta(scanner_t *scanner, tokentype_t type, char *value)
 {
 	token_t *tok;
 	if ((tok = malloc(sizeof(token_t))) != NULL) {
 		tok->type = type;
 		tok->meta = value;
+		tok->line = scanner->line;
+		tok->col = scanner->col;
 	}
 	return tok;
 }
 
 static token_t *
-alloc_token(tokentype_t type)
+alloc_token(scanner_t *scanner, tokentype_t type)
 {
-	return alloc_token_with_meta(type, 0);
+	return alloc_token_with_meta(scanner, type, 0);
 }
 
 static token_t *
@@ -164,6 +179,7 @@ scanner_read_as_number(scanner_t *scanner)
 	int len = 0, flag = 0;
 	char chr;
 	char *value;
+	token_t *token;
 
 	for (;;) {
 		chr = scanner_peekfar(scanner, len);
@@ -229,9 +245,10 @@ scanner_read_as_number(scanner_t *scanner)
 	value[len] = 0;
 
 	/* consume the characters once read */
+	token = alloc_token_with_meta(scanner, TOK_DIGIT, value);
 	scanner->pos += len;
-
-	return alloc_token_with_meta(TOK_DIGIT, value);
+	scanner->col += len;
+	return token;
 }
 
 static token_t *
@@ -241,6 +258,7 @@ scanner_read_as_identifier(scanner_t *scanner)
 	char chr;
 	char *value;
 	tokentype_t type;
+	token_t *token;
 
 	for (;;) {
 		chr = scanner_peekfar(scanner, len);
@@ -254,15 +272,19 @@ scanner_read_as_identifier(scanner_t *scanner)
 	memcpy(value, scanner->buffer + scanner->pos, len);
 	value[len] = 0;
 
-	/* consume the characters */
-	scanner->pos += len;
-
 	/* check out the lookup table in case it is a keyword. */
 	type = match_identifier(value);
 	if (type == TOK_IDENTIFIER) {
-		return alloc_token_with_meta(type, value);
+		token = alloc_token_with_meta(scanner, type, value);
+	} else {
+		token = alloc_token(scanner, type);
 	}
-	return alloc_token(type);
+
+	/* consume the characters */
+	scanner->pos += len;
+	scanner->col += len;
+
+	return token;
 }
 
 static token_t *
@@ -271,6 +293,7 @@ scanner_read_as_string(scanner_t *scanner)
 	char *meta;
 	char chr;
 	int len = 0;
+	token_t *tok;
 
 	for (;;) {
 		chr = scanner_peekfar(scanner, len);
@@ -295,8 +318,10 @@ scanner_read_as_string(scanner_t *scanner)
 			meta = malloc(sizeof(char) * len + 1);
 			memcpy(meta, scanner->buffer + scanner->pos, len);
 			meta[len] = 0;
+			tok = alloc_token_with_meta(scanner, TOK_STRING, meta);
 			scanner->pos += len;
-			return alloc_token_with_meta(TOK_STRING, meta);
+			scanner->col += len;
+			return tok;
 		}
 	}
 }
@@ -310,6 +335,8 @@ scanner_init(char *buffer, size_t len)
 		scanner->buffer = buffer;
 		scanner->len = len;
 		scanner->pos = 0;
+		scanner->line = 1;
+		scanner->col = 1;
 
 		// skip the BOM mark
 		if (scanner->buffer[0] == (char) 0xEF
@@ -333,93 +360,117 @@ scanner_next(scanner_t *scanner)
 {
 	scanner_clean(scanner);
 	int next = scanner_peek(scanner);
+	token_t *token;
 
 	if (next == EOF) {
-		return alloc_token(TOK_EOF);
+		return alloc_token(scanner, TOK_EOF);
 	}
 
 	switch (next) {
 	case '*':
+		token = alloc_token(scanner, TOK_ASTERISK);
 		scanner_discard(scanner);
-		return alloc_token(TOK_ASTERISK);
+		return token;
 	case '@':
+		token = alloc_token(scanner, TOK_AT);
 		scanner_discard(scanner);
-		return alloc_token(TOK_AT);
+		return token;
 	case '^':
+		token = alloc_token(scanner, TOK_CARET);
 		scanner_discard(scanner);
-		return alloc_token(TOK_CARET);
+		return token;
 	case ':':
 		if (scanner_peekfar(scanner, 1) == '=') {
+			token = alloc_token(scanner, TOK_ASSIGN);
 			scanner_discard(scanner);
 			scanner_discard(scanner);
-			return alloc_token(TOK_ASSIGN);
+			return token;
 		}
+		token = alloc_token(scanner, TOK_COLON);
 		scanner_discard(scanner);
-		return alloc_token(TOK_COLON);
+		return token;
 	case ',':
+		token = alloc_token(scanner, TOK_COMMA);
 		scanner_discard(scanner);
-		return alloc_token(TOK_COMMA);
+		return token;
 	case '$':
+		token = alloc_token(scanner, TOK_DOLLAR);
 		scanner_discard(scanner);
-		return alloc_token(TOK_DOLLAR);
+		return token;
 	case '.':
 		if (scanner_peekfar(scanner, 1) == '.') {
+			token = alloc_token(scanner, TOK_DOTDOT);
 			scanner_discard(scanner);
 			scanner_discard(scanner);
-			return alloc_token(TOK_DOTDOT);
+			return token;
 		} else {
+			token = alloc_token(scanner, TOK_DOT);
 			scanner_discard(scanner);
-			return alloc_token(TOK_DOT);
+			return token;
 		}
 	case '=':
+		token = alloc_token(scanner, TOK_EQUAL);
 		scanner_discard(scanner);
-		return alloc_token(TOK_EQUAL);
+		return token;
 	case '>':
 		if (scanner_peekfar(scanner, 1) == '=') {
+			token = alloc_token(scanner, TOK_GREATEQL);
 			scanner_discard(scanner);
 			scanner_discard(scanner);
-			return alloc_token(TOK_GREATEQL);
+			return token;
 		} else {
+			token = alloc_token(scanner, TOK_GREATER);
 			scanner_discard(scanner);
-			return alloc_token(TOK_GREATER);
+			return token;
 		}
 	case '[':
+		token = alloc_token(scanner, TOK_LBRACKET);
 		scanner_discard(scanner);
-		return alloc_token(TOK_LBRACKET);
+		return token;
 	case '<':
 		if (scanner_peekfar(scanner, 1) == '=') {
+			token = alloc_token(scanner, TOK_LESSEQL);
 			scanner_discard(scanner);
 			scanner_discard(scanner);
-			return alloc_token(TOK_LESSEQL);
+			return token;
 		} else if (scanner_peekfar(scanner, 1) == '>') {
+			token = alloc_token(scanner, TOK_NEQUAL);
 			scanner_discard(scanner);
 			scanner_discard(scanner);
-			return alloc_token(TOK_NEQUAL);
+			return token;
 		} else {
+			token = alloc_token(scanner, TOK_LESSER);
 			scanner_discard(scanner);
-			return alloc_token(TOK_LESSER);
+			return token;
 		}
 	case '(':
+		token = alloc_token(scanner, TOK_LPAREN);
 		scanner_discard(scanner);
-		return alloc_token(TOK_LPAREN);
+		return token;
 	case '-':
+		token = alloc_token(scanner, TOK_MINUS);
 		scanner_discard(scanner);
-		return alloc_token(TOK_MINUS);
+		return token;
 	case '+':
+		token = alloc_token(scanner, TOK_PLUS);
 		scanner_discard(scanner);
-		return alloc_token(TOK_PLUS);
+		return token;
 	case ']':
+		token = alloc_token(scanner, TOK_RBRACKET);
 		scanner_discard(scanner);
-		return alloc_token(TOK_RBRACKET);
+		return token;
 	case ')':
+		token = alloc_token(scanner, TOK_RPAREN);
 		scanner_discard(scanner);
-		return alloc_token(TOK_RPAREN);
+		return token;
 	case ';':
+		token = alloc_token(scanner, TOK_SEMICOLON);
 		scanner_discard(scanner);
-		return alloc_token(TOK_SEMICOLON);
+		return token;
 	case '/':
+		token = alloc_token(scanner, TOK_SLASH);
 		scanner_discard(scanner);
-		return alloc_token(TOK_SLASH);
+		return token;
 	}
 
 	if (next >= '0' && next <= '9') {
@@ -432,5 +483,5 @@ scanner_next(scanner_t *scanner)
 		return scanner_read_as_string(scanner);
 	}
 
-	return alloc_token(TOK_EOF);
+	return alloc_token(scanner, TOK_EOF);
 }

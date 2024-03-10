@@ -86,6 +86,7 @@ typedef enum tokentype {
 typedef struct token {
 	tokentype_t type;
 	char *meta;
+	unsigned int line, col;
 } token_t;
 
 void token_free(token_t *tok);

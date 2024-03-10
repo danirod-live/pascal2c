@@ -185,6 +185,7 @@ parser_error(parser_t *parser, token_t *token, char *error)
 	printf("Error: %s. ", error);
 	print_token(token);
 	printf("\n");
+	printf(" Line: %d, Col: %d\n", token->line, token->col);
 	exit(1);
 }
 
