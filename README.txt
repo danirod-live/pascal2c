@@ -66,3 +66,10 @@ Bugs:
 		Comercial : (Ventas : Integer; Comision : Real; ZonaActividad : Zona);
 		Produccion : (Supera20Anios : Boolean; AltoRiesgo : Boolean);
 	END
+
+* The parser should accept function and procedure declarations with not arguments that use double parenthesis.
+  The following code should be valid: `FUNCTION FooBar();`
+
+* The scanner should accept length metadata when printing variables, such as value:5:2.
+
+* The parser should accept types such as STRING[10] or STRING(10) to indicate the length of a string.
