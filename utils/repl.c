@@ -23,7 +23,7 @@
 #include "scanner.h"
 #include "token.h"
 
-#define BUFFER_SIZE 4096
+#define BUFFER_SIZE 65536
 #define FGETS_SIZE 80
 
 #define DEFAULT_EXPRESSION_NODE "statement"
@@ -83,9 +83,29 @@ static void
 print_token(token_t *tok)
 {
 	if (tok->meta != 0) {
-		printf("%s(%s)\n", tokentype_string(tok->type), tok->meta);
+		printf("%s(%s) <%d,%d>\n",
+		       tokentype_string(tok->type),
+		       tok->meta,
+		       tok->line,
+		       tok->col);
 	} else {
-		puts(tokentype_string(tok->type));
+		printf("%s <%d,%d>\n",
+		       tokentype_string(tok->type),
+		       tok->line,
+		       tok->col);
+	}
+}
+
+static void
+readfile()
+{
+	int offt = 0;
+	char partial_buffer[FGETS_SIZE];
+
+	while (fgets(partial_buffer, FGETS_SIZE, stdin) != NULL) {
+		// append whatever we have read into the buffer
+		strncpy(buffer + offt, partial_buffer, FGETS_SIZE);
+		offt += strnlen(partial_buffer, FGETS_SIZE);
 	}
 }
 
@@ -165,8 +185,7 @@ evalexpr()
 static int
 readtokenloop()
 {
-	if (isatty(0))
-		printf("> ");
+	printf("> ");
 	if (readkeyb() == 0) {
 		return 1;
 	}
@@ -174,6 +193,13 @@ readtokenloop()
 	evaltoken();
 
 	return 0;
+}
+
+static void
+readtokenstr()
+{
+	readfile();
+	evaltoken();
 }
 
 static int
@@ -190,12 +216,41 @@ readexprloop()
 	return 0;
 }
 
+static void
+readexprstr()
+{
+	readfile();
+	evalexpr();
+}
+
 void
 usage()
 {
 	puts("Flags:");
 	puts(" -t: read in tokens mode");
 	puts(" -e=<node>: read in expressions mode of type <node>");
+}
+
+void
+dotokens()
+{
+	if (isatty(0)) {
+		while (!readtokenloop())
+			;
+	} else {
+		readtokenstr();
+	}
+}
+
+void
+doexpressions()
+{
+	if (isatty(0)) {
+		while (!readexprloop())
+			;
+	} else {
+		readexprstr();
+	}
 }
 
 int
@@ -236,8 +291,7 @@ main(int argc, char **argv)
 	if (func_mode == MODE_UNKNOWN) {
 		usage();
 	} else if (func_mode == MODE_TOKENS) {
-		while (!readtokenloop())
-			;
+		dotokens();
 	} else if (func_mode == MODE_EXPRS) {
 		if (func_expr_type == NULL) {
 			func_expr_type = DEFAULT_EXPRESSION_NODE;
@@ -257,7 +311,6 @@ main(int argc, char **argv)
 			     "parser.");
 			printf("Expression mode: %s\n", type->desc);
 		}
-		while (!readexprloop())
-			;
+		doexpressions();
 	}
 }
