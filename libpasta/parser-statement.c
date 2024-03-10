@@ -68,11 +68,9 @@ parser_statement(parser_t *parser)
 		return gotostmt(parser);
 	case TOK_EXIT:
 		return exitstmt(parser);
-	case TOK_END: /* Most probably this is an empty expression. */
-	case TOK_SEMICOLON:
-		return NULL;
 	default:
-		parser_error(parser, peek, "Not implemented yet");
+		/* Most probably an empty expression. */
+		return NULL;
 	}
 }
 
@@ -315,7 +313,7 @@ caselist(parser_t *parser)
 {
 	expr_t *root = NULL, *next;
 	expr_t *consts, *stmt, *caseitem;
-	token_t *colon, *separator;
+	token_t *colon, *separator, *peek;
 	for (;;) {
 		consts = constlist(parser);
 		colon = parser_token_expect(parser, TOK_COLON);
@@ -335,6 +333,12 @@ caselist(parser_t *parser)
 			// We are done here.
 			return root;
 		case TOK_SEMICOLON:
+			// Semicolon and END is valid. Check for this.
+			peek = parser_peek(parser);
+			if (peek->type == TOK_END) {
+				parser_token(parser);
+				return root;
+			}
 			// We have another case.
 			break;
 		default:
