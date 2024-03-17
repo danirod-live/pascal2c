@@ -57,6 +57,12 @@ parser_simple_type(parser_t *parser)
 			root = new_binary(next_symbol, NULL, NULL);
 			root->exp_left = next_node;
 			root->exp_right = parser_constant(parser);
+		} else if (next_symbol->type == TOK_LBRACKET) {
+			next_symbol = parser_token_expect(parser, TOK_LBRACKET);
+			root = new_binary(next_symbol, NULL, NULL);
+			root->exp_left = next_node;
+			root->exp_right = parser_expression(parser);
+			parser_token_expect(parser, TOK_RBRACKET);
 		} else {
 			// Branch 1 - identifier alone
 			root = new_grouping(next_node);

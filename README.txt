@@ -50,26 +50,12 @@ Parts of the compiler grammar that are implemented:
 - [x] Simple type
 - [x] Field list
 - [x] Type
-- [ ] Statement
-- [ ] Block
-- [ ] Program
+- [x] Statement
+- [x] Block
+- [x] Program
 
 
 Bugs:
 
-* parser_variable is not working (try "hello.world" or "hello[1]" and see)
-
-* The following code fails and I don't know why. Expression type: field list Expression type: field list
-
-	CASE TipoEmpleado : Categoria OF
-		Directivo : (Departamento : String[32]; Personas : Integer);
-		Comercial : (Ventas : Integer; Comision : Real; ZonaActividad : Zona);
-		Produccion : (Supera20Anios : Boolean; AltoRiesgo : Boolean);
-	END
-
-* The parser should accept function and procedure declarations with not arguments that use double parenthesis.
-  The following code should be valid: `FUNCTION FooBar();`
-
 * The scanner should accept length metadata when printing variables, such as value:5:2.
-
-* The parser should accept types such as STRING[10] or STRING(10) to indicate the length of a string.
+  TODO: Where the f**k is this documented in FPC so that I can see how they implement this on their AST.

@@ -87,7 +87,9 @@ parser_parameter_list(parser_t *parser)
 	expr_t *root = NULL;
 
 	if (parser_peek(parser)->type == TOK_LPAREN) {
-		root = do_parse_parameter_list(parser);
+		if (parser_peek_far(parser, 1)->type != TOK_RPAREN) {
+			root = do_parse_parameter_list(parser);
+		}
 	}
 	return root;
 }
