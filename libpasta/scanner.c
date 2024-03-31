@@ -277,6 +277,7 @@ scanner_read_as_identifier(scanner_t *scanner)
 	if (type == TOK_IDENTIFIER) {
 		token = alloc_token_with_meta(scanner, type, value);
 	} else {
+		free(value); // We don't need you anymore
 		token = alloc_token(scanner, type);
 	}
 

@@ -169,13 +169,17 @@ evalexpr()
 	scanner_t *scanner;
 	parser_t *parser;
 	token_t *token;
+	expr_t *exp;
 	int eof = 0;
 	int length = strnlen((const char *) buffer, BUFFER_SIZE);
 
 	if ((scanner = scanner_init(buffer, length)) != NULL) {
 		parser = parser_new();
 		parser_load_tokens(parser, scanner);
-		dump_expr(func_expr_cb(parser));
+		exp = func_expr_cb(parser);
+		dump_expr(exp);
+		expr_free(exp);
+		parser_free(parser);
 		scanner_free(scanner);
 		return 0;
 	}

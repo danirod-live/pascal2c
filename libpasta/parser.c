@@ -78,6 +78,12 @@ dump_expr(expr_t *expr)
 void
 expr_free(expr_t *expr)
 {
+	if (expr->exp_left) {
+		expr_free(expr->exp_left);
+	}
+	if (expr->exp_right) {
+		expr_free(expr->exp_right);
+	}
 	free(expr);
 }
 
@@ -130,6 +136,21 @@ parser_new()
 	par->len = 0;
 	par->pos = 0;
 	return par;
+}
+
+void
+parser_free(parser_t *parser)
+{
+	int i;
+
+	// This is not the place, this should be done by the same entity
+	// that calls parser_append() and provides the tokens in first place.
+	for (i = 0; i < parser->len; i++) {
+		token_free(parser->tokens[i]);
+		free(parser->tokens[i]);
+	}
+	free(parser->tokens);
+	free(parser);
 }
 
 #define TOKEN_LOAD_BUFSIZ 64

@@ -299,6 +299,7 @@ clean_expression(expr_t *expr)
 
 	if (expr->type == GROUPING && expr->exp_left->type == GROUPING) {
 		nested = expr->exp_left;
+		expr->exp_left = NULL;
 		expr_free(expr);
 		return clean_expression(nested);
 	}

@@ -292,10 +292,12 @@ forloop(parser_t *parser)
 		parser_error(parser, todownto, "Expected either TO or DOWNTO");
 	}
 
-	return new_binary(
+	expr_t *return_value = new_binary(
 	    fortoken,
 	    new_unary(ident->token, new_binary(todownto, startexpr, endexpr)),
 	    stmt);
+	expr_free(ident);
+	return return_value;
 }
 
 static expr_t *

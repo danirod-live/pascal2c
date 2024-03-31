@@ -46,6 +46,7 @@ typedef struct parser {
 } parser_t;
 
 parser_t *parser_new();
+void parser_free(parser_t *parser);
 void parser_load_tokens(parser_t *parser, scanner_t *scanner);
 token_t *parser_peek(parser_t *parser);
 token_t *parser_peek_far(parser_t *parser, unsigned int offt);

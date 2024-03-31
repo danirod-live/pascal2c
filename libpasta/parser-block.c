@@ -11,7 +11,9 @@ static expr_t *varblock(parser_t *parser);
 static expr_t *varexpression(parser_t *parser);
 static expr_t *functionproc(parser_t *parser);
 static expr_t *beginblock(parser_t *parser);
-static token_t *newsemi();
+
+// Fake semicolon used to avoid allocating extra nodes.
+static token_t PLACEHOLDER_SEMICOLON = {.type = TOK_SEMICOLON};
 
 expr_t *
 parser_block(parser_t *parser)
@@ -19,7 +21,7 @@ parser_block(parser_t *parser)
 	token_t *token;
 	expr_t *root, *next;
 
-	root = new_binary(newsemi(), NULL, NULL);
+	root = new_binary(&PLACEHOLDER_SEMICOLON, NULL, NULL);
 	next = root;
 
 	for (;;) {
@@ -50,18 +52,10 @@ parser_block(parser_t *parser)
 		}
 
 		/* So there is another part on this block. */
-		next->exp_right = new_binary(newsemi(), NULL, NULL);
+		next->exp_right =
+		    new_binary(&PLACEHOLDER_SEMICOLON, NULL, NULL);
 		next = next->exp_right;
 	}
-}
-
-static token_t *
-newsemi()
-{
-	token_t *tok = malloc(sizeof(token_t));
-	tok->type = TOK_SEMICOLON;
-	tok->meta = NULL;
-	return tok;
 }
 
 static int
@@ -206,6 +200,8 @@ functionproc(parser_t *parser)
 	ident = parser_identifier(parser);
 	parlist = parser_parameter_list(parser);
 	prototype = new_binary(ident->token, parlist, NULL);
+	ident->token = NULL;
+	expr_free(ident);
 
 	if (keyword->type == TOK_FUNCTION) {
 		/* Take the return type and add it to the prototype. */
