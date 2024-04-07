@@ -37,22 +37,22 @@ the equivalent Pascal code.
 Parts of the compiler grammar that are implemented:
 
 - [x] Identifier
-- [x] Variable
+- [ ] Variable
 - [x] Unsigned number
-- [x] Expression
-- [x] Simple expression
-- [x] Term
-- [x] Factor
-- [x] Unsigned constant
-- [x] Parameter list
+- [ ] Expression
+- [ ] Simple expression
+- [ ] Term
+- [ ] Factor
+- [ ] Unsigned constant
+- [ ] Parameter list
 - [x] Unsigned integer
-- [x] Constant
-- [x] Simple type
-- [x] Field list
-- [x] Type
-- [x] Statement
-- [x] Block
-- [x] Program
+- [ ] Constant
+- [ ] Simple type
+- [ ] Field list
+- [ ] Type
+- [ ] Statement
+- [ ] Block
+- [ ] Program
 
 
 Bugs:

@@ -74,5 +74,63 @@ expr_t *parser_parameter_list(parser_t *parser);
 expr_t *parser_statement(parser_t *parser);
 expr_t *parser_block(parser_t *parser);
 expr_t *parser_program(parser_t *parser);
-
 void dump_expr(expr_t *expr);
+
+// Everything is wrong with this.
+
+typedef enum expr2_type {
+	EXP_IDENTIFIER,
+	EXP_UNSIGNED_NUMBER,
+	EXP_UNSIGNED_IDENTIFIER,
+	EXP_VARIABLE,
+	EXP_VARIABLE_PATH_CARET,
+	EXP_VARIABLE_PATH_DOT,
+	EXP_VARIABLE_PATH_ARRAY,
+} expr2_type_t;
+
+struct expr2;
+
+typedef struct expr_identifier {
+	token_t *token;
+} expr_identifier_t;
+
+typedef struct expr_unsigned_number {
+	token_t *token;
+} expr_unsigned_number_t;
+
+typedef struct expr_unsigned_integer {
+	token_t *token;
+} expr_unsigned_integer_t;
+
+typedef struct expr_variable_path_dot {
+	struct expr2 *identifier;
+} expr_variable_path_dot_t;
+
+typedef struct expr_variable {
+	struct expr2 *identifier;
+	struct expr2 **paths;
+	unsigned int path_count;
+} expr_variable_t;
+
+typedef struct expr2 {
+	expr2_type_t type;
+	union {
+		expr_identifier_t identifier;
+		expr_unsigned_number_t unsigned_number;
+		expr_unsigned_integer_t unsigned_integer;
+		expr_variable_t variable;
+		expr_variable_path_dot_t variable_path_dot;
+	} payload;
+} expr2_t;
+
+expr2_t *expression_new(expr2_type_t type);
+
+expr2_t *parser2_identifier(parser_t *parser);
+expr2_t *parser2_unsigned_number(parser_t *parser);
+expr2_t *parser2_unsigned_integer(parser_t *parser);
+
+#define E_IDENTIFIER(e) ((e).payload.identifier)
+#define E_UNSIGNED_NUMBER(e) ((e).payload.unsigned_number)
+#define E_UNSIGNED_INTEGER(e) ((e).payload.unsigned_integer)
+#define E_VARIABLE(e) ((e).payload.variable)
+#define E_VARIABLE_PATH_DOT(e) ((e).payload.variable_path_dot)
