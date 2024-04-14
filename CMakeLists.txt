@@ -5,6 +5,7 @@ set(CMAKE_C_STANDARD_REQUIRED True)
 set(CMAKE_EXPORT_COMPILE_COMMANDS True)
 
 add_subdirectory(libpasta)
+add_subdirectory(astrepl)
 
 add_executable(repl utils/repl.c)
 target_include_directories(repl PRIVATE include)
