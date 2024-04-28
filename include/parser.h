@@ -110,6 +110,11 @@ typedef struct expr_variable_path_dot {
 	struct expr2 *identifier;
 } expr_variable_path_dot_t;
 
+typedef struct expr_variable_path_array {
+	struct expr2 **expressions;
+	unsigned int exp_count;
+} expr_variable_path_array_t;
+
 typedef struct expr_variable {
 	struct expr2 *identifier;
 	struct expr2 **paths;
@@ -136,6 +141,7 @@ typedef struct expr2 {
 		expr_unsigned_integer_t unsigned_integer;
 		expr_variable_t variable;
 		expr_variable_path_dot_t variable_path_dot;
+		expr_variable_path_array_t variable_path_array;
 		expr_unsigned_constant_t unsigned_constant;
 		expr_string_t string;
 		expr_expression_t expression;
@@ -156,6 +162,7 @@ expr2_t *parser2_expression(parser_t *parser);
 #define E_UNSIGNED_INTEGER(e) ((e).payload.unsigned_integer)
 #define E_VARIABLE(e) ((e).payload.variable)
 #define E_VARIABLE_PATH_DOT(e) ((e).payload.variable_path_dot)
+#define E_VARIABLE_PATH_ARRAY(e) ((e).payload.variable_path_array)
 #define E_UNSIGNED_CONSTANT(e) ((e).payload.unsigned_constant)
 #define E_STRING(e) ((e).payload.string)
 #define E_EXPRESSION(e) ((e).payload.expression)

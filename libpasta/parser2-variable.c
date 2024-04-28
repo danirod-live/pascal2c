@@ -18,6 +18,7 @@
 #include <stdlib.h>
 
 static int has_extra(parser_t *parser);
+static void extra_array(parser_t *parser, expr2_t *expr);
 static void consume_extra(expr2_t *expr, parser_t *parser);
 
 expr2_t *
@@ -51,7 +52,9 @@ consume_extra(expr2_t *expr, parser_t *parser)
 		extra = expression_new(EXP_VARIABLE_PATH_CARET);
 		break;
 	case TOK_LBRACKET:
-		parser_error(parser, token, "TOK_LBRACKET not implemented yet");
+		extra = expression_new(EXP_VARIABLE_PATH_ARRAY);
+		extra_array(parser, extra);
+		break;
 	default:
 		parser_error(parser, token, "Invalid extra");
 	}
@@ -69,4 +72,35 @@ has_extra(parser_t *parser)
 	token_t *tok = parser_peek(parser);
 	return tok->type == TOK_CARET || tok->type == TOK_DOT
 	       || tok->type == TOK_LBRACKET;
+}
+
+static void
+extra_array(parser_t *parser, expr2_t *expr)
+{
+#define E_EXPRESSIONS(e) (E_VARIABLE_PATH_ARRAY(e).expressions)
+#define E_EXP_COUNT(e) (E_VARIABLE_PATH_ARRAY(e).exp_count)
+	int size, next_exp;
+	token_t *separator;
+
+	E_EXP_COUNT(*expr) = 0;
+	E_EXPRESSIONS(*expr) = NULL;
+	for (;;) {
+		next_exp = E_EXP_COUNT(*expr);
+		E_EXP_COUNT(*expr)++;
+		size = E_EXP_COUNT(*expr) * sizeof(expr2_t);
+		E_EXPRESSIONS(*expr) = realloc(E_EXPRESSIONS(*expr), size);
+		E_EXPRESSIONS(*expr)[next_exp] = parser2_expression(parser);
+
+		separator = parser_token(parser);
+		switch (separator->type) {
+		case TOK_RBRACKET:
+			return;
+		case TOK_COMMA:
+			continue;
+		default:
+			parser_error(parser, separator, "Unexpected separator");
+		}
+	}
+#undef E_EXPRESSIONS
+#undef E_EXP_COUNT
 }

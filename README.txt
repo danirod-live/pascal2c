@@ -37,13 +37,13 @@ the equivalent Pascal code.
 Parts of the compiler grammar that are implemented:
 
 - [x] Identifier
-- [ ] Variable
+- [x] Variable
 - [x] Unsigned number
-- [ ] Expression
-- [ ] Simple expression
-- [ ] Term
-- [ ] Factor
-- [ ] Unsigned constant
+- [x] Expression
+- [x] Simple expression
+- [x] Term
+- [x] Factor
+- [x] Unsigned constant
 - [ ] Parameter list
 - [x] Unsigned integer
 - [ ] Constant

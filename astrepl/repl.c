@@ -80,6 +80,15 @@ print_expr2_variable_path_dot(expr2_t *exp)
 }
 
 static void
+print_expr2_variable_path_array(expr2_t *exp)
+{
+	printf("{\"paths\": ");
+	print_expr2_array(E_VARIABLE_PATH_ARRAY(*exp).expressions,
+	                  E_VARIABLE_PATH_ARRAY(*exp).exp_count);
+	printf("}");
+}
+
+static void
 print_expr2_string(expr2_t *exp)
 {
 	char *ptr;
@@ -190,6 +199,10 @@ print_expr2(expr2_t *exp)
 		type = "VariableCaret";
 		detail_func = NULL;
 		break;
+	case EXP_VARIABLE_PATH_ARRAY:
+		type = "VariableArray";
+		detail_func = print_expr2_variable_path_array;
+		break;
 	case EXP_NIL:
 		type = "NilConstant";
 		detail_func = NULL;
@@ -291,7 +304,7 @@ eval_code()
 	}
 
 	parser_load_tokens(parser, scanner);
-	expr2_t *ident = parser2_expression(parser);
+	expr2_t *ident = parser2_variable(parser);
 	print_expr2(ident);
 
 pre_cleanup_parser:
