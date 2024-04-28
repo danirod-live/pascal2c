@@ -128,6 +128,7 @@ expr2_t *expression_new(expr2_type_t type);
 expr2_t *parser2_identifier(parser_t *parser);
 expr2_t *parser2_unsigned_number(parser_t *parser);
 expr2_t *parser2_unsigned_integer(parser_t *parser);
+expr2_t *parser2_variable(parser_t *parser);
 
 #define E_IDENTIFIER(e) ((e).payload.identifier)
 #define E_UNSIGNED_NUMBER(e) ((e).payload.unsigned_number)

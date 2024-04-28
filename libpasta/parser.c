@@ -132,9 +132,11 @@ parser_t *
 parser_new()
 {
 	parser_t *par = (parser_t *) malloc(sizeof(parser_t));
-	par->tokens = NULL;
-	par->len = 0;
-	par->pos = 0;
+	if (par) {
+		par->tokens = NULL;
+		par->len = 0;
+		par->pos = 0;
+	}
 	return par;
 }
 
