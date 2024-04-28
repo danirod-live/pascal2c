@@ -86,6 +86,9 @@ typedef enum expr2_type {
 	EXP_VARIABLE_PATH_CARET,
 	EXP_VARIABLE_PATH_DOT,
 	EXP_VARIABLE_PATH_ARRAY,
+	EXP_UNSIGNED_CONSTANT,
+	EXP_NIL,
+	EXP_STRING,
 } expr2_type_t;
 
 struct expr2;
@@ -112,6 +115,14 @@ typedef struct expr_variable {
 	unsigned int path_count;
 } expr_variable_t;
 
+typedef struct expr_unsigned_constant {
+	struct expr2 *inner;
+} expr_unsigned_constant_t;
+
+typedef struct expr_string {
+	token_t *token;
+} expr_string_t;
+
 typedef struct expr2 {
 	expr2_type_t type;
 	union {
@@ -120,6 +131,8 @@ typedef struct expr2 {
 		expr_unsigned_integer_t unsigned_integer;
 		expr_variable_t variable;
 		expr_variable_path_dot_t variable_path_dot;
+		expr_unsigned_constant_t unsigned_constant;
+		expr_string_t string;
 	} payload;
 } expr2_t;
 
@@ -129,9 +142,12 @@ expr2_t *parser2_identifier(parser_t *parser);
 expr2_t *parser2_unsigned_number(parser_t *parser);
 expr2_t *parser2_unsigned_integer(parser_t *parser);
 expr2_t *parser2_variable(parser_t *parser);
+expr2_t *parser2_unsigned_constant(parser_t *parser);
 
 #define E_IDENTIFIER(e) ((e).payload.identifier)
 #define E_UNSIGNED_NUMBER(e) ((e).payload.unsigned_number)
 #define E_UNSIGNED_INTEGER(e) ((e).payload.unsigned_integer)
 #define E_VARIABLE(e) ((e).payload.variable)
 #define E_VARIABLE_PATH_DOT(e) ((e).payload.variable_path_dot)
+#define E_UNSIGNED_CONSTANT(e) ((e).payload.unsigned_constant)
+#define E_STRING(e) ((e).payload.string)

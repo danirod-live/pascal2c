@@ -79,6 +79,37 @@ print_expr2_variable_path_dot(expr2_t *exp)
 }
 
 static void
+print_expr2_string(expr2_t *exp)
+{
+	char *ptr;
+
+	printf("{\"string\": \"");
+	ptr = E_STRING(*exp).token->meta;
+	while (ptr && *ptr) {
+		switch (*ptr) {
+		case '\\':
+		case '"':
+			printf("\\%c", *ptr);
+			break;
+		default:
+			printf("%c", *ptr);
+			break;
+		}
+		ptr++;
+	}
+
+	printf("\"}");
+}
+
+static void
+print_expr2_unsigned_constant(expr2_t *exp)
+{
+	printf("{\"inner\": ");
+	print_expr2(E_UNSIGNED_CONSTANT(*exp).inner);
+	printf("}");
+}
+
+static void
 print_expr2(expr2_t *exp)
 {
 	char *type;
@@ -105,19 +136,34 @@ print_expr2(expr2_t *exp)
 		type = "VariableDot";
 		detail_func = print_expr2_variable_path_dot;
 		break;
+	case EXP_VARIABLE_PATH_CARET:
+		type = "VariableCaret";
+		detail_func = NULL;
+		break;
+	case EXP_NIL:
+		type = "NilConstant";
+		detail_func = NULL;
+		break;
+	case EXP_STRING:
+		type = "String";
+		detail_func = print_expr2_string;
+		break;
+	case EXP_UNSIGNED_CONSTANT:
+		type = "UnsignedConstant";
+		detail_func = print_expr2_unsigned_constant;
+		break;
 	default:
 		type = NULL;
 		detail_func = NULL;
 	}
 
 	if (type != NULL) {
-		printf("{\"type\": \"%s\", \"data\": ", type);
+		printf("{\"type\": \"%s\"", type);
 		if (detail_func) {
+			printf(", \"data\": ");
 			detail_func(exp);
-		} else {
-			printf("{}");
 		}
-		printf("}\n");
+		printf("}");
 	}
 }
 
@@ -191,8 +237,7 @@ eval_code()
 	}
 
 	parser_load_tokens(parser, scanner);
-
-	expr2_t *ident = parser2_variable(parser);
+	expr2_t *ident = parser2_unsigned_constant(parser);
 	print_expr2(ident);
 
 pre_cleanup_parser:
@@ -212,6 +257,7 @@ main_loop()
 		len = read_keyboard();
 		if (len > 0) {
 			eval_code();
+			printf("\n");
 		}
 	} while (len > 0);
 }
