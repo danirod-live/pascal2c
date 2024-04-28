@@ -15,6 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "scanner.h"
+#include "token.h"
 #include <parser.h>
 #include <stdio.h>
 #include <string.h>
@@ -110,6 +111,55 @@ print_expr2_unsigned_constant(expr2_t *exp)
 }
 
 static void
+print_expr2_expression_node(expr_t *exp)
+{
+	const char *token_type;
+
+	printf("{");
+
+	switch (exp->type) {
+	case UNARY:
+		printf("\"type\": \"UNARY\"");
+		break;
+	case BINARY:
+		printf("\"type\": \"BINARY\"");
+		break;
+	case GROUPING:
+		printf("\"type\": \"GROUPING\"");
+		break;
+	case LITERAL:
+		printf("\"type\": \"LITERAL\"");
+		break;
+	}
+
+	if (exp->token) {
+		if (exp->token->type) {
+			token_type = tokentype_string(exp->token->type);
+			printf(", \"token\": \"%s\"", token_type);
+		}
+		if (exp->token->meta) {
+			printf(", \"meta\": \"%s\"", exp->token->meta);
+		}
+	}
+	if (exp->exp_left) {
+		printf(", \"left\": ");
+		print_expr2_expression_node(exp->exp_left);
+	}
+	if (exp->exp_right) {
+		printf(", \"right\": ");
+		print_expr2_expression_node(exp->exp_right);
+	}
+
+	printf("}");
+}
+
+static void
+print_expr2_expression(expr2_t *exp)
+{
+	print_expr2_expression_node(E_EXPRESSION(*exp).exp);
+}
+
+static void
 print_expr2(expr2_t *exp)
 {
 	char *type;
@@ -151,6 +201,10 @@ print_expr2(expr2_t *exp)
 	case EXP_UNSIGNED_CONSTANT:
 		type = "UnsignedConstant";
 		detail_func = print_expr2_unsigned_constant;
+		break;
+	case EXP_EXPRESSION:
+		type = "Expression";
+		detail_func = print_expr2_expression;
 		break;
 	default:
 		type = NULL;
@@ -237,7 +291,7 @@ eval_code()
 	}
 
 	parser_load_tokens(parser, scanner);
-	expr2_t *ident = parser2_unsigned_constant(parser);
+	expr2_t *ident = parser2_expression(parser);
 	print_expr2(ident);
 
 pre_cleanup_parser:

@@ -89,6 +89,7 @@ typedef enum expr2_type {
 	EXP_UNSIGNED_CONSTANT,
 	EXP_NIL,
 	EXP_STRING,
+	EXP_EXPRESSION,
 } expr2_type_t;
 
 struct expr2;
@@ -123,6 +124,10 @@ typedef struct expr_string {
 	token_t *token;
 } expr_string_t;
 
+typedef struct expr_expression {
+	expr_t *exp;
+} expr_expression_t;
+
 typedef struct expr2 {
 	expr2_type_t type;
 	union {
@@ -133,6 +138,7 @@ typedef struct expr2 {
 		expr_variable_path_dot_t variable_path_dot;
 		expr_unsigned_constant_t unsigned_constant;
 		expr_string_t string;
+		expr_expression_t expression;
 	} payload;
 } expr2_t;
 
@@ -143,6 +149,7 @@ expr2_t *parser2_unsigned_number(parser_t *parser);
 expr2_t *parser2_unsigned_integer(parser_t *parser);
 expr2_t *parser2_variable(parser_t *parser);
 expr2_t *parser2_unsigned_constant(parser_t *parser);
+expr2_t *parser2_expression(parser_t *parser);
 
 #define E_IDENTIFIER(e) ((e).payload.identifier)
 #define E_UNSIGNED_NUMBER(e) ((e).payload.unsigned_number)
@@ -151,3 +158,4 @@ expr2_t *parser2_unsigned_constant(parser_t *parser);
 #define E_VARIABLE_PATH_DOT(e) ((e).payload.variable_path_dot)
 #define E_UNSIGNED_CONSTANT(e) ((e).payload.unsigned_constant)
 #define E_STRING(e) ((e).payload.string)
+#define E_EXPRESSION(e) ((e).payload.expression)
