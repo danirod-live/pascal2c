@@ -120,6 +120,15 @@ print_expr2_unsigned_constant(expr2_t *exp)
 }
 
 static void
+print_expr2_constant(expr2_t *exp)
+{
+	printf("{\"sign\": \"%c\", ", E_CONSTANT(*exp).sign);
+	printf("\"inner\": ");
+	print_expr2(E_CONSTANT(*exp).inner);
+	printf("}");
+}
+
+static void
 print_expr2_expression_node(expr_t *exp)
 {
 	const char *token_type;
@@ -183,8 +192,8 @@ print_expr2(expr2_t *exp)
 		type = "UnsignedNumber";
 		detail_func = print_expr2_unsigned_number;
 		break;
-	case EXP_UNSIGNED_IDENTIFIER:
-		type = "UnsignedIdentifier";
+	case EXP_UNSIGNED_INTEGER:
+		type = "UnsignedInteger";
 		detail_func = print_expr2_unsigned_integer;
 		break;
 	case EXP_VARIABLE:
@@ -214,6 +223,10 @@ print_expr2(expr2_t *exp)
 	case EXP_UNSIGNED_CONSTANT:
 		type = "UnsignedConstant";
 		detail_func = print_expr2_unsigned_constant;
+		break;
+	case EXP_CONSTANT:
+		type = "Constant";
+		detail_func = print_expr2_constant;
 		break;
 	case EXP_EXPRESSION:
 		type = "Expression";
@@ -304,7 +317,7 @@ eval_code()
 	}
 
 	parser_load_tokens(parser, scanner);
-	expr2_t *ident = parser2_variable(parser);
+	expr2_t *ident = parser2_constant(parser);
 	print_expr2(ident);
 
 pre_cleanup_parser:

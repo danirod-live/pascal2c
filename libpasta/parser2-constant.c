@@ -18,6 +18,45 @@
 #include "parser.h"
 
 expr2_t *
+parser2_constant(parser_t *parser)
+{
+	token_t *token = parser_peek(parser);
+	expr2_t *expr;
+	char sign;
+
+	switch (token->type) {
+	case TOK_PLUS:
+		sign = '+';
+		break;
+	case TOK_MINUS:
+		sign = '-';
+		break;
+	default:
+		return parser2_unsigned_constant(parser);
+	}
+
+	parser_token(parser);
+
+	expr = expression_new(EXP_CONSTANT);
+	E_CONSTANT(*expr).sign = sign;
+	token = parser_peek(parser);
+	switch (token->type) {
+	case TOK_DIGIT:
+		puts("soy un digito");
+		E_CONSTANT(*expr).inner = parser2_unsigned_integer(parser);
+		break;
+	case TOK_IDENTIFIER:
+		puts("soy un identifier");
+		E_CONSTANT(*expr).inner = parser2_identifier(parser);
+		break;
+	default:
+		puts("soy un payaso");
+		parser_error(parser, token, "Neither digit nor identifier");
+	}
+	return expr;
+}
+
+expr2_t *
 parser2_unsigned_constant(parser_t *parser)
 {
 	expr2_t *exp, *inner;

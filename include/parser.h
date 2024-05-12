@@ -81,15 +81,17 @@ void dump_expr(expr_t *expr);
 typedef enum expr2_type {
 	EXP_IDENTIFIER,
 	EXP_UNSIGNED_NUMBER,
-	EXP_UNSIGNED_IDENTIFIER,
+	EXP_UNSIGNED_INTEGER,
 	EXP_VARIABLE,
 	EXP_VARIABLE_PATH_CARET,
 	EXP_VARIABLE_PATH_DOT,
 	EXP_VARIABLE_PATH_ARRAY,
 	EXP_UNSIGNED_CONSTANT,
+	EXP_CONSTANT,
 	EXP_NIL,
 	EXP_STRING,
 	EXP_EXPRESSION,
+	EXP_SIMPLE_TYPE,
 } expr2_type_t;
 
 struct expr2;
@@ -125,6 +127,11 @@ typedef struct expr_unsigned_constant {
 	struct expr2 *inner;
 } expr_unsigned_constant_t;
 
+typedef struct expr_constant {
+	struct expr2 *inner;
+	char sign;
+} expr_constant_t;
+
 typedef struct expr_string {
 	token_t *token;
 } expr_string_t;
@@ -132,6 +139,18 @@ typedef struct expr_string {
 typedef struct expr_expression {
 	expr_t *exp;
 } expr_expression_t;
+
+typedef enum expr_simple_type_kind {
+	SIMPLE_TYPE_SINGLE,
+	SIMPLE_TYPE_RANGE,
+	SIMPLE_TYPE_LIST,
+} expr_simple_type_kind_t;
+
+typedef struct expr_simple_type {
+	struct expr2 **components;
+	unsigned int component_count;
+	expr_simple_type_kind_t type;
+} expr_simple_type_t;
 
 typedef struct expr2 {
 	expr2_type_t type;
@@ -143,8 +162,10 @@ typedef struct expr2 {
 		expr_variable_path_dot_t variable_path_dot;
 		expr_variable_path_array_t variable_path_array;
 		expr_unsigned_constant_t unsigned_constant;
+		expr_constant_t constant;
 		expr_string_t string;
 		expr_expression_t expression;
+		expr_simple_type_t simple_type;
 	} payload;
 } expr2_t;
 
@@ -156,6 +177,8 @@ expr2_t *parser2_unsigned_integer(parser_t *parser);
 expr2_t *parser2_variable(parser_t *parser);
 expr2_t *parser2_unsigned_constant(parser_t *parser);
 expr2_t *parser2_expression(parser_t *parser);
+expr2_t *parser2_constant(parser_t *parser);
+expr2_t *parser2_simple_type(parser_t *parser);
 
 #define E_IDENTIFIER(e) ((e).payload.identifier)
 #define E_UNSIGNED_NUMBER(e) ((e).payload.unsigned_number)
@@ -164,5 +187,7 @@ expr2_t *parser2_expression(parser_t *parser);
 #define E_VARIABLE_PATH_DOT(e) ((e).payload.variable_path_dot)
 #define E_VARIABLE_PATH_ARRAY(e) ((e).payload.variable_path_array)
 #define E_UNSIGNED_CONSTANT(e) ((e).payload.unsigned_constant)
+#define E_CONSTANT(e) ((e).payload.constant)
 #define E_STRING(e) ((e).payload.string)
 #define E_EXPRESSION(e) ((e).payload.expression)
+#define E_SIMPLE_TYPE(e) ((e).payload.simple_type)
