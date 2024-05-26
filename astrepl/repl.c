@@ -201,6 +201,41 @@ print_expr2_simple_type(expr2_t *exp)
 }
 
 static void
+print_expr2_plist(expr2_t *exp)
+{
+	int i;
+	expr_plist_t *plist = &(E_PLIST(*exp));
+
+	printf("{\"chunks\": [");
+	for (i = 0; i < plist->chunks_count; i++) {
+		print_expr2(plist->chunks[i]);
+		if (i + 1 < plist->chunks_count)
+			printf(", ");
+	}
+	printf("]}");
+}
+
+static void
+print_expr2_plist_chunk(expr2_t *exp)
+{
+	int i;
+	expr_plist_chunk_t *chunk = &(E_PLIST_CHUNK(*exp));
+
+	printf("{\"data_type\": ");
+	print_expr2(chunk->data_type);
+
+	printf(", \"identifiers\": [");
+	for (i = 0; i < chunk->identifier_count; i++) {
+		print_expr2(chunk->identifiers[i]);
+		if (i + 1 < chunk->identifier_count)
+			printf(", ");
+	}
+	printf("], \"reference\": %s", chunk->is_reference ? "true" : "false");
+
+	printf("}");
+}
+
+static void
 print_expr2(expr2_t *exp)
 {
 	char *type;
@@ -258,6 +293,14 @@ print_expr2(expr2_t *exp)
 	case EXP_SIMPLE_TYPE:
 		type = "SimpleType";
 		detail_func = print_expr2_simple_type;
+		break;
+	case EXP_PLIST:
+		type = "ParameterList";
+		detail_func = print_expr2_plist;
+		break;
+	case EXP_PLIST_CHUNK:
+		type = "ParameterListChunk";
+		detail_func = print_expr2_plist_chunk;
 		break;
 	default:
 		type = NULL;
@@ -344,7 +387,7 @@ eval_code()
 	}
 
 	parser_load_tokens(parser, scanner);
-	expr2_t *ident = parser2_simple_type(parser);
+	expr2_t *ident = parser2_parameter_list(parser);
 	print_expr2(ident);
 
 pre_cleanup_parser:

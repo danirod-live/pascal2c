@@ -44,7 +44,7 @@ Parts of the compiler grammar that are implemented:
 - [x] Term
 - [x] Factor
 - [x] Unsigned constant
-- [ ] Parameter list
+- [x] Parameter list
 - [x] Unsigned integer
 - [x] Constant
 - [x] Simple type

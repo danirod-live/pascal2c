@@ -19,6 +19,7 @@ add_library(pasta
 	parser2-variable.c
 	parser2-constant.c
 	parser2-expression.c
+	parser2-parameter-list.c
 	parser2-type.c
 	scanner.c
 	token.c

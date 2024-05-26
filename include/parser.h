@@ -92,6 +92,8 @@ typedef enum expr2_type {
 	EXP_STRING,
 	EXP_EXPRESSION,
 	EXP_SIMPLE_TYPE,
+	EXP_PLIST_CHUNK,
+	EXP_PLIST,
 } expr2_type_t;
 
 struct expr2;
@@ -152,6 +154,18 @@ typedef struct expr_simple_type {
 	expr_simple_type_kind_t type;
 } expr_simple_type_t;
 
+typedef struct expr_plist_chunk {
+	struct expr2 **identifiers;
+	unsigned int identifier_count;
+	struct expr2 *data_type;
+	int is_reference;
+} expr_plist_chunk_t;
+
+typedef struct expr_plist {
+	struct expr2 **chunks;
+	unsigned int chunks_count;
+} expr_plist_t;
+
 typedef struct expr2 {
 	expr2_type_t type;
 	union {
@@ -166,6 +180,8 @@ typedef struct expr2 {
 		expr_string_t string;
 		expr_expression_t expression;
 		expr_simple_type_t simple_type;
+		expr_plist_chunk_t plist_chunk;
+		expr_plist_t plist;
 	} payload;
 } expr2_t;
 
@@ -179,6 +195,7 @@ expr2_t *parser2_unsigned_constant(parser_t *parser);
 expr2_t *parser2_expression(parser_t *parser);
 expr2_t *parser2_constant(parser_t *parser);
 expr2_t *parser2_simple_type(parser_t *parser);
+expr2_t *parser2_parameter_list(parser_t *parser);
 
 #define E_IDENTIFIER(e) ((e).payload.identifier)
 #define E_UNSIGNED_NUMBER(e) ((e).payload.unsigned_number)
@@ -191,3 +208,5 @@ expr2_t *parser2_simple_type(parser_t *parser);
 #define E_STRING(e) ((e).payload.string)
 #define E_EXPRESSION(e) ((e).payload.expression)
 #define E_SIMPLE_TYPE(e) ((e).payload.simple_type)
+#define E_PLIST_CHUNK(e) ((e).payload.plist_chunk)
+#define E_PLIST(e) ((e).payload.plist)
