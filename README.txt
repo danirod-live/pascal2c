@@ -46,8 +46,8 @@ Parts of the compiler grammar that are implemented:
 - [x] Unsigned constant
 - [ ] Parameter list
 - [x] Unsigned integer
-- [ ] Constant
-- [ ] Simple type
+- [x] Constant
+- [x] Simple type
 - [ ] Field list
 - [ ] Type
 - [ ] Statement
@@ -59,3 +59,5 @@ Bugs:
 
 * The scanner should accept length metadata when printing variables, such as value:5:2.
   TODO: Where the f**k is this documented in FPC so that I can see how they implement this on their AST.
+
+* parser2_simple_type currently does not accept ranges such as 'a'..'z'

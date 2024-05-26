@@ -178,6 +178,29 @@ print_expr2_expression(expr2_t *exp)
 }
 
 static void
+print_expr2_simple_type(expr2_t *exp)
+{
+	printf("{\"type\": \"");
+	switch (E_SIMPLE_TYPE(*exp).type) {
+	case SIMPLE_TYPE_SINGLE:
+		printf("single");
+		break;
+	case SIMPLE_TYPE_RANGE:
+		printf("range");
+		break;
+	case SIMPLE_TYPE_LIST:
+		printf("list");
+		break;
+	}
+	printf("\", ");
+
+	printf("\"components\": ");
+	print_expr2_array(E_SIMPLE_TYPE(*exp).components,
+	                  E_SIMPLE_TYPE(*exp).component_count);
+	printf("}");
+}
+
+static void
 print_expr2(expr2_t *exp)
 {
 	char *type;
@@ -231,6 +254,10 @@ print_expr2(expr2_t *exp)
 	case EXP_EXPRESSION:
 		type = "Expression";
 		detail_func = print_expr2_expression;
+		break;
+	case EXP_SIMPLE_TYPE:
+		type = "SimpleType";
+		detail_func = print_expr2_simple_type;
 		break;
 	default:
 		type = NULL;
@@ -317,7 +344,7 @@ eval_code()
 	}
 
 	parser_load_tokens(parser, scanner);
-	expr2_t *ident = parser2_constant(parser);
+	expr2_t *ident = parser2_simple_type(parser);
 	print_expr2(ident);
 
 pre_cleanup_parser:

@@ -53,7 +53,7 @@ parser2_unsigned_integer(parser_t *parser)
 	}
 
 	// If we reach here, is valid.
-	exp = expression_new(EXP_UNSIGNED_IDENTIFIER);
+	exp = expression_new(EXP_UNSIGNED_INTEGER);
 	E_UNSIGNED_INTEGER(*exp).token = token;
 	return exp;
 }
