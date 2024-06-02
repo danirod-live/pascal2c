@@ -201,6 +201,49 @@ print_expr2_simple_type(expr2_t *exp)
 }
 
 static void
+print_expr2_set_type(expr2_t *exp)
+{
+	expr_set_type_t *set = &(E_SET_TYPE(*exp));
+
+	printf("{\"packed\": %s, \"simple_type\": ",
+	       set->packed ? "true" : "false");
+	print_expr2_simple_type(E_SET_TYPE(*exp).simple_type);
+	printf("}");
+}
+
+static void
+print_expr2_array_type(expr2_t *exp)
+{
+	expr_array_type_t *arr = &(E_ARRAY_TYPE(*exp));
+
+	printf("{\"packed\": %s, \"type\": ", arr->packed ? "true" : "false");
+	print_expr2(arr->type);
+	printf(", \"dimensions\": ");
+	print_expr2_array(arr->inner_types, arr->inner_types_count);
+	printf("}");
+}
+
+static void
+print_expr2_ref_type(expr2_t *exp)
+{
+	print_expr2_identifier(E_REFERENCE_TYPE(*exp).identifier);
+}
+
+static void
+print_expr2_file_type(expr2_t *exp)
+{
+	expr_file_type_t *file = &(E_FILE_TYPE(*exp));
+
+	printf("{\"packed\": %s, \"type\": ", file->packed ? "true" : "false");
+	if (file->type == NULL) {
+		printf("null");
+	} else {
+		print_expr2(file->type);
+	}
+	printf("}");
+}
+
+static void
 print_expr2_plist(expr2_t *exp)
 {
 	int i;
@@ -293,6 +336,22 @@ print_expr2(expr2_t *exp)
 	case EXP_SIMPLE_TYPE:
 		type = "SimpleType";
 		detail_func = print_expr2_simple_type;
+		break;
+	case EXP_REFERENCE_TYPE:
+		type = "ReferenceType";
+		detail_func = print_expr2_ref_type;
+		break;
+	case EXP_SET_TYPE:
+		type = "SetType";
+		detail_func = print_expr2_set_type;
+		break;
+	case EXP_ARRAY_TYPE:
+		type = "ArrayType";
+		detail_func = print_expr2_array_type;
+		break;
+	case EXP_FILE_TYPE:
+		type = "FileType";
+		detail_func = print_expr2_file_type;
 		break;
 	case EXP_PLIST:
 		type = "ParameterList";
@@ -387,7 +446,7 @@ eval_code()
 	}
 
 	parser_load_tokens(parser, scanner);
-	expr2_t *ident = parser2_parameter_list(parser);
+	expr2_t *ident = parser2_type(parser);
 	print_expr2(ident);
 
 pre_cleanup_parser:

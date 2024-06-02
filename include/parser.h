@@ -92,6 +92,10 @@ typedef enum expr2_type {
 	EXP_STRING,
 	EXP_EXPRESSION,
 	EXP_SIMPLE_TYPE,
+	EXP_REFERENCE_TYPE,
+	EXP_SET_TYPE,
+	EXP_ARRAY_TYPE,
+	EXP_FILE_TYPE,
 	EXP_PLIST_CHUNK,
 	EXP_PLIST,
 } expr2_type_t;
@@ -154,6 +158,27 @@ typedef struct expr_simple_type {
 	expr_simple_type_kind_t type;
 } expr_simple_type_t;
 
+typedef struct expr_reference_type {
+	struct expr2 *identifier;
+} expr_reference_type_t;
+
+typedef struct expr_set_type {
+	struct expr2 *simple_type;
+	int packed;
+} expr_set_type_t;
+
+typedef struct expr_array_type {
+	struct expr2 **inner_types;
+	int inner_types_count;
+	struct expr2 *type;
+	int packed;
+} expr_array_type_t;
+
+typedef struct expr_file_type {
+	struct expr2 *type;
+	int packed;
+} expr_file_type_t;
+
 typedef struct expr_plist_chunk {
 	struct expr2 **identifiers;
 	unsigned int identifier_count;
@@ -180,6 +205,10 @@ typedef struct expr2 {
 		expr_string_t string;
 		expr_expression_t expression;
 		expr_simple_type_t simple_type;
+		expr_reference_type_t reference_type;
+		expr_set_type_t set_type;
+		expr_array_type_t array_type;
+		expr_file_type_t file_type;
 		expr_plist_chunk_t plist_chunk;
 		expr_plist_t plist;
 	} payload;
@@ -195,6 +224,7 @@ expr2_t *parser2_unsigned_constant(parser_t *parser);
 expr2_t *parser2_expression(parser_t *parser);
 expr2_t *parser2_constant(parser_t *parser);
 expr2_t *parser2_simple_type(parser_t *parser);
+expr2_t *parser2_type(parser_t *parser);
 expr2_t *parser2_parameter_list(parser_t *parser);
 
 #define E_IDENTIFIER(e) ((e).payload.identifier)
@@ -208,5 +238,9 @@ expr2_t *parser2_parameter_list(parser_t *parser);
 #define E_STRING(e) ((e).payload.string)
 #define E_EXPRESSION(e) ((e).payload.expression)
 #define E_SIMPLE_TYPE(e) ((e).payload.simple_type)
+#define E_REFERENCE_TYPE(e) ((e).payload.reference_type)
+#define E_SET_TYPE(e) ((e).payload.set_type)
+#define E_ARRAY_TYPE(e) ((e).payload.array_type)
+#define E_FILE_TYPE(e) ((e).payload.file_type)
 #define E_PLIST_CHUNK(e) ((e).payload.plist_chunk)
 #define E_PLIST(e) ((e).payload.plist)

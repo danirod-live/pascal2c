@@ -19,6 +19,10 @@
 
 static expr2_t *simple_type_list(parser_t *parser);
 static expr2_t *simple_type_normal(parser_t *parser);
+static expr2_t *type_reference(parser_t *parser);
+static expr2_t *type_set(parser_t *parser, int packed);
+static expr2_t *type_array(parser_t *parser, int packed);
+static expr2_t *type_file(parser_t *parser, int packed);
 
 expr2_t *
 parser2_simple_type(parser_t *parser)
@@ -31,6 +35,125 @@ parser2_simple_type(parser_t *parser)
 	} else {
 		return simple_type_normal(parser);
 	}
+}
+
+expr2_t *
+parser2_type(parser_t *parser)
+{
+	token_t *peek;
+	int packed = 0;
+
+	peek = parser_peek(parser);
+
+	/* Check if packed. */
+	if (peek->type == TOK_PACKED) {
+		packed = 1;
+
+		/* Consume this token and continue looking. */
+		parser_token(parser);
+		peek = parser_peek(parser);
+	}
+
+	switch (peek->type) {
+	case TOK_CARET:
+		return type_reference(parser);
+	case TOK_SET:
+		return type_set(parser, packed);
+	case TOK_ARRAY:
+		return type_array(parser, packed);
+	case TOK_FILE:
+		return type_file(parser, packed);
+	// TODO: add the rest of cases.
+	default:
+		return parser2_simple_type(parser);
+	}
+}
+
+static expr2_t *
+type_reference(parser_t *parser)
+{
+	expr2_t *expr;
+
+	parser_token_expect(parser, TOK_CARET);
+	expr = expression_new(EXP_REFERENCE_TYPE);
+	E_REFERENCE_TYPE(*expr).identifier = parser2_identifier(parser);
+	return expr;
+}
+
+static expr2_t *
+type_set(parser_t *parser, int packed)
+{
+	expr2_t *expr;
+
+	parser_token_expect(parser, TOK_SET);
+	parser_token_expect(parser, TOK_OF);
+	expr = expression_new(EXP_SET_TYPE);
+	E_SET_TYPE(*expr).simple_type = parser2_simple_type(parser);
+	E_SET_TYPE(*expr).packed = packed;
+	return expr;
+}
+
+static expr2_t *
+type_array(parser_t *parser, int packed)
+{
+	expr2_t *expr;
+	expr_array_type_t *arr;
+	int inner_pos;
+
+	token_t *peek;
+
+	parser_token_expect(parser, TOK_ARRAY);
+	parser_token_expect(parser, TOK_LBRACKET);
+
+	expr = expression_new(EXP_ARRAY_TYPE);
+	arr = &(E_ARRAY_TYPE(*expr));
+	arr->packed = packed;
+	arr->inner_types_count = 0;
+
+	do {
+		// Read next item of the array.
+		inner_pos = arr->inner_types_count;
+		arr->inner_types_count++;
+		arr->inner_types =
+		    realloc(arr->inner_types, arr->inner_types_count);
+		arr->inner_types[inner_pos] = parser2_simple_type(parser);
+
+		// Check if this is the last item to read.
+		peek = parser_token(parser);
+		if (peek->type != TOK_RBRACKET && peek->type != TOK_COMMA) {
+			parser_error(parser,
+			             peek,
+			             "Expected RBRACKET or COMMA");
+		}
+	} while (peek->type != TOK_RBRACKET);
+
+	parser_token_expect(parser, TOK_OF);
+	arr->type = parser2_type(parser);
+
+	return expr;
+}
+
+static expr2_t *
+type_file(parser_t *parser, int packed)
+{
+	expr2_t *expr;
+	expr_file_type_t *file;
+	token_t *token;
+
+	expr = expression_new(EXP_FILE_TYPE);
+	file = &(E_FILE_TYPE(*expr));
+	file->packed = packed;
+
+	parser_token_expect(parser, TOK_FILE);
+	token = parser_peek(parser);
+	if (token->type == TOK_OF) {
+		parser_token(parser);
+		file->type = parser2_type(parser);
+	} else {
+		file->type = NULL;
+	}
+
+	return expr;
 }
 
 static expr2_t *
