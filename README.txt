@@ -61,3 +61,5 @@ Bugs:
   TODO: Where the f**k is this documented in FPC so that I can see how they implement this on their AST.
 
 * parser2_simple_type currently does not accept ranges such as 'a'..'z'
+
+* simple_type may treat numbers as ranges even without a range

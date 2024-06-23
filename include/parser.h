@@ -98,6 +98,7 @@ typedef enum expr2_type {
 	EXP_FILE_TYPE,
 	EXP_PLIST_CHUNK,
 	EXP_PLIST,
+	EXP_FIELD_LIST_ROW,
 } expr2_type_t;
 
 struct expr2;
@@ -191,6 +192,12 @@ typedef struct expr_plist {
 	unsigned int chunks_count;
 } expr_plist_t;
 
+typedef struct expr_field_list_row {
+	struct expr2 **identifiers;
+	unsigned int identifier_count;
+	struct expr2 *data_type;
+} expr_field_list_row_t;
+
 typedef struct expr2 {
 	expr2_type_t type;
 	union {
@@ -211,6 +218,7 @@ typedef struct expr2 {
 		expr_file_type_t file_type;
 		expr_plist_chunk_t plist_chunk;
 		expr_plist_t plist;
+		expr_field_list_row_t field_list_row;
 	} payload;
 } expr2_t;
 
@@ -225,6 +233,7 @@ expr2_t *parser2_expression(parser_t *parser);
 expr2_t *parser2_constant(parser_t *parser);
 expr2_t *parser2_simple_type(parser_t *parser);
 expr2_t *parser2_type(parser_t *parser);
+expr2_t *parser2_field_list(parser_t *parser);
 expr2_t *parser2_parameter_list(parser_t *parser);
 
 #define E_IDENTIFIER(e) ((e).payload.identifier)
@@ -244,3 +253,4 @@ expr2_t *parser2_parameter_list(parser_t *parser);
 #define E_FILE_TYPE(e) ((e).payload.file_type)
 #define E_PLIST_CHUNK(e) ((e).payload.plist_chunk)
 #define E_PLIST(e) ((e).payload.plist)
+#define E_FIELD_LIST_ROW(e) ((e).payload.field_list_row)

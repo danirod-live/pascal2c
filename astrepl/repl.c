@@ -279,6 +279,24 @@ print_expr2_plist_chunk(expr2_t *exp)
 }
 
 static void
+print_expr2_field_list_row(expr2_t *exp)
+{
+	int i;
+	expr_field_list_row_t *row = &(E_FIELD_LIST_ROW(*exp));
+
+	printf("{\"data_type\": ");
+	print_expr2(row->data_type);
+
+	printf(", \"identifiers\": [");
+	for (i = 0; i < row->identifier_count; i++) {
+		print_expr2(row->identifiers[i]);
+		if (i + 1 < row->identifier_count)
+			printf(", ");
+	}
+	printf("]}");
+}
+
+static void
 print_expr2(expr2_t *exp)
 {
 	char *type;
@@ -360,6 +378,10 @@ print_expr2(expr2_t *exp)
 	case EXP_PLIST_CHUNK:
 		type = "ParameterListChunk";
 		detail_func = print_expr2_plist_chunk;
+		break;
+	case EXP_FIELD_LIST_ROW:
+		type = "FieldListRow";
+		detail_func = print_expr2_field_list_row;
 		break;
 	default:
 		type = NULL;
@@ -446,7 +468,7 @@ eval_code()
 	}
 
 	parser_load_tokens(parser, scanner);
-	expr2_t *ident = parser2_type(parser);
+	expr2_t *ident = parser2_field_list(parser);
 	print_expr2(ident);
 
 pre_cleanup_parser:
