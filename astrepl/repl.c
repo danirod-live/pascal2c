@@ -212,6 +212,16 @@ print_expr2_set_type(expr2_t *exp)
 }
 
 static void
+print_expr2_record_type(expr2_t *exp)
+{
+	expr_record_type_t *set = &(E_RECORD_TYPE(*exp));
+
+	printf("{\"packed\": %s, \"fields\": ", set->packed ? "true" : "false");
+	print_expr2(set->fields);
+	printf("}");
+}
+
+static void
 print_expr2_array_type(expr2_t *exp)
 {
 	expr_array_type_t *arr = &(E_ARRAY_TYPE(*exp));
@@ -424,6 +434,10 @@ print_expr2(expr2_t *exp)
 		type = "SetType";
 		detail_func = print_expr2_set_type;
 		break;
+	case EXP_RECORD_TYPE:
+		type = "RecordType";
+		detail_func = print_expr2_record_type;
+		break;
 	case EXP_ARRAY_TYPE:
 		type = "ArrayType";
 		detail_func = print_expr2_array_type;
@@ -541,7 +555,7 @@ eval_code()
 	}
 
 	parser_load_tokens(parser, scanner);
-	expr2_t *ident = parser2_field_list(parser);
+	expr2_t *ident = parser2_type(parser);
 	print_expr2(ident);
 
 pre_cleanup_parser:

@@ -95,6 +95,7 @@ typedef enum expr2_type {
 	EXP_REFERENCE_TYPE,
 	EXP_SET_TYPE,
 	EXP_ARRAY_TYPE,
+	EXP_RECORD_TYPE,
 	EXP_FILE_TYPE,
 	EXP_PLIST_CHUNK,
 	EXP_PLIST,
@@ -171,6 +172,11 @@ typedef struct expr_set_type {
 	int packed;
 } expr_set_type_t;
 
+typedef struct expr_record_type {
+	struct expr2 *fields;
+	int packed;
+} expr_record_type_t;
+
 typedef struct expr_array_type {
 	struct expr2 **inner_types;
 	int inner_types_count;
@@ -237,6 +243,7 @@ typedef struct expr2 {
 		expr_reference_type_t reference_type;
 		expr_set_type_t set_type;
 		expr_array_type_t array_type;
+		expr_record_type_t record_type;
 		expr_file_type_t file_type;
 		expr_plist_chunk_t plist_chunk;
 		expr_plist_t plist;
@@ -275,6 +282,7 @@ expr2_t *parser2_parameter_list(parser_t *parser);
 #define E_REFERENCE_TYPE(e) ((e).payload.reference_type)
 #define E_SET_TYPE(e) ((e).payload.set_type)
 #define E_ARRAY_TYPE(e) ((e).payload.array_type)
+#define E_RECORD_TYPE(e) ((e).payload.record_type)
 #define E_FILE_TYPE(e) ((e).payload.file_type)
 #define E_PLIST_CHUNK(e) ((e).payload.plist_chunk)
 #define E_PLIST(e) ((e).payload.plist)

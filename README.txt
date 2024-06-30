@@ -48,8 +48,8 @@ Parts of the compiler grammar that are implemented:
 - [x] Unsigned integer
 - [x] Constant
 - [x] Simple type
-- [ ] Field list
-- [ ] Type
+- [x] Field list
+- [x] Type
 - [ ] Statement
 - [ ] Block
 - [ ] Program

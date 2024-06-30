@@ -22,6 +22,7 @@ static expr2_t *simple_type_normal(parser_t *parser);
 static expr2_t *type_reference(parser_t *parser);
 static expr2_t *type_set(parser_t *parser, int packed);
 static expr2_t *type_array(parser_t *parser, int packed);
+static expr2_t *type_record(parser_t *parser, int packed);
 static expr2_t *type_file(parser_t *parser, int packed);
 
 expr2_t *
@@ -63,7 +64,8 @@ parser2_type(parser_t *parser)
 		return type_array(parser, packed);
 	case TOK_FILE:
 		return type_file(parser, packed);
-	// TODO: add the rest of cases.
+	case TOK_RECORD:
+		return type_record(parser, packed);
 	default:
 		return parser2_simple_type(parser);
 	}
@@ -153,6 +155,19 @@ type_file(parser_t *parser, int packed)
 		file->type = NULL;
 	}
 
+	return expr;
+}
+
+static expr2_t *
+type_record(parser_t *parser, int packed)
+{
+	expr2_t *expr;
+
+	parser_token_expect(parser, TOK_RECORD);
+	expr = expression_new(EXP_RECORD_TYPE);
+	E_RECORD_TYPE(*expr).fields = parser2_field_list(parser);
+	E_RECORD_TYPE(*expr).packed = packed;
+	parser_token_expect(parser, TOK_END);
 	return expr;
 }
 
