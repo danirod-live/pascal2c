@@ -279,6 +279,29 @@ print_expr2_plist_chunk(expr2_t *exp)
 }
 
 static void
+print_expr2_field_list_case(expr2_t *exp)
+{
+	int i;
+	expr_field_list_case_t *case_st = &(E_FIELD_LIST_CASE(*exp));
+
+	printf("{\"identifier\": ");
+	if (case_st->identifier == NULL) {
+		printf("null");
+	} else {
+		print_expr2(case_st->identifier);
+	}
+	printf(", \"type\": ");
+	print_expr2(case_st->type);
+	printf(", \"cases\": [");
+	for (i = 0; i < case_st->rows_count; i++) {
+		print_expr2(case_st->rows[i]);
+		if (i + 1 < case_st->rows_count)
+			printf(", ");
+	}
+	printf("]}");
+}
+
+static void
 print_expr2_field_list_row(expr2_t *exp)
 {
 	int i;
@@ -294,6 +317,44 @@ print_expr2_field_list_row(expr2_t *exp)
 			printf(", ");
 	}
 	printf("]}");
+}
+
+static void
+print_expr2_field_list_case_row(expr2_t *exp)
+{
+	int i;
+	expr_field_list_case_row_t *row = &(E_FIELD_LIST_CASE_ROW(*exp));
+
+	printf("{\"consts\": [");
+	for (i = 0; i < row->constant_count; i++) {
+		print_expr2(row->constants[i]);
+		if (i + 1 < row->constant_count)
+			printf(", ");
+	}
+	printf("], \"fields\": ");
+	print_expr2(row->field_list);
+	printf("}");
+}
+
+static void
+print_expr2_field_list(expr2_t *exp)
+{
+	int i;
+	expr_field_list_t *flist = &(E_FIELD_LIST(*exp));
+
+	printf("{\"chunks\": [");
+	for (i = 0; i < flist->rows_count; i++) {
+		print_expr2(flist->rows[i]);
+		if (i + 1 < flist->rows_count)
+			printf(", ");
+	}
+	printf("], \"cases\": ");
+	if (flist->case_stmt == NULL) {
+		printf("null");
+	} else {
+		print_expr2_field_list_case(flist->case_stmt);
+	}
+	printf("}");
 }
 
 static void
@@ -379,9 +440,21 @@ print_expr2(expr2_t *exp)
 		type = "ParameterListChunk";
 		detail_func = print_expr2_plist_chunk;
 		break;
+	case EXP_FIELD_LIST:
+		type = "FieldList";
+		detail_func = print_expr2_field_list;
+		break;
 	case EXP_FIELD_LIST_ROW:
 		type = "FieldListRow";
 		detail_func = print_expr2_field_list_row;
+		break;
+	case EXP_FIELD_LIST_CASE:
+		type = "FieldListCase";
+		detail_func = print_expr2_field_list_case;
+		break;
+	case EXP_FIELD_LIST_CASE_ROW:
+		type = "FieldListCaseRow";
+		detail_func = print_expr2_field_list_case_row;
 		break;
 	default:
 		type = NULL;

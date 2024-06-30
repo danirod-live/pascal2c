@@ -98,7 +98,10 @@ typedef enum expr2_type {
 	EXP_FILE_TYPE,
 	EXP_PLIST_CHUNK,
 	EXP_PLIST,
+	EXP_FIELD_LIST,
 	EXP_FIELD_LIST_ROW,
+	EXP_FIELD_LIST_CASE,
+	EXP_FIELD_LIST_CASE_ROW,
 } expr2_type_t;
 
 struct expr2;
@@ -192,11 +195,30 @@ typedef struct expr_plist {
 	unsigned int chunks_count;
 } expr_plist_t;
 
+typedef struct expr_field_list {
+	struct expr2 **rows;
+	unsigned int rows_count;
+	struct expr2 *case_stmt;
+} expr_field_list_t;
+
 typedef struct expr_field_list_row {
 	struct expr2 **identifiers;
 	unsigned int identifier_count;
 	struct expr2 *data_type;
 } expr_field_list_row_t;
+
+typedef struct expr_field_list_case {
+	struct expr2 *identifier;
+	struct expr2 *type;
+	struct expr2 **rows;
+	unsigned int rows_count;
+} expr_field_list_case_t;
+
+typedef struct expr_field_list_case_row {
+	struct expr2 **constants;
+	unsigned int constant_count;
+	struct expr2 *field_list;
+} expr_field_list_case_row_t;
 
 typedef struct expr2 {
 	expr2_type_t type;
@@ -218,7 +240,10 @@ typedef struct expr2 {
 		expr_file_type_t file_type;
 		expr_plist_chunk_t plist_chunk;
 		expr_plist_t plist;
+		expr_field_list_t field_list;
 		expr_field_list_row_t field_list_row;
+		expr_field_list_case_t field_list_case;
+		expr_field_list_case_row_t field_list_case_row;
 	} payload;
 } expr2_t;
 
@@ -253,4 +278,7 @@ expr2_t *parser2_parameter_list(parser_t *parser);
 #define E_FILE_TYPE(e) ((e).payload.file_type)
 #define E_PLIST_CHUNK(e) ((e).payload.plist_chunk)
 #define E_PLIST(e) ((e).payload.plist)
+#define E_FIELD_LIST(e) ((e).payload.field_list)
 #define E_FIELD_LIST_ROW(e) ((e).payload.field_list_row)
+#define E_FIELD_LIST_CASE(e) ((e).payload.field_list_case)
+#define E_FIELD_LIST_CASE_ROW(e) ((e).payload.field_list_case_row)
