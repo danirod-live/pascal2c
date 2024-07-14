@@ -368,6 +368,43 @@ print_expr2_field_list(expr2_t *exp)
 }
 
 static void
+print_expr2_stmt_label(expr2_t *exp)
+{
+	printf("{\"label\": ");
+	print_expr2(E_STMT_LABEL(*exp).label);
+	printf(", \"expression\": ");
+	print_expr2(E_STMT_LABEL(*exp).nested);
+	printf("}");
+}
+
+static void
+print_expr2_stmt_assign(expr2_t *exp)
+{
+	printf("{\"identifier\": ");
+	print_expr2(E_STMT_ASSIGNMENT(*exp).identifier);
+	printf(", \"expression\": ");
+	print_expr2(E_STMT_ASSIGNMENT(*exp).expression);
+	printf("}");
+}
+
+static void
+print_expr2_stmt_function_call(expr2_t *exp)
+{
+	int i;
+	expr_stmt_function_call_t *call = &(E_STMT_FUNCTION_CALL(*exp));
+
+	printf("{\"identifier\": ");
+	print_expr2(call->identifier);
+	printf(", \"arguments\": [");
+	for (i = 0; i < call->param_count; i++) {
+		print_expr2(call->params[i]);
+		if (i + 1 < call->param_count)
+			printf(", ");
+	}
+	printf("]}");
+}
+
+static void
 print_expr2(expr2_t *exp)
 {
 	char *type;
@@ -470,6 +507,18 @@ print_expr2(expr2_t *exp)
 		type = "FieldListCaseRow";
 		detail_func = print_expr2_field_list_case_row;
 		break;
+	case EXP_STMT_LABEL:
+		type = "StatementLabel";
+		detail_func = print_expr2_stmt_label;
+		break;
+	case EXP_STMT_ASSIGN:
+		type = "StatementAssign";
+		detail_func = print_expr2_stmt_assign;
+		break;
+	case EXP_STMT_FUNCTION_CALL:
+		type = "StatementFunctionCall";
+		detail_func = print_expr2_stmt_function_call;
+		break;
 	default:
 		type = NULL;
 		detail_func = NULL;
@@ -555,7 +604,7 @@ eval_code()
 	}
 
 	parser_load_tokens(parser, scanner);
-	expr2_t *ident = parser2_type(parser);
+	expr2_t *ident = parser2_statement(parser);
 	print_expr2(ident);
 
 pre_cleanup_parser:

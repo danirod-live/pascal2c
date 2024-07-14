@@ -63,3 +63,6 @@ Bugs:
 * parser2_simple_type currently does not accept ranges such as 'a'..'z'
 
 * simple_type may treat numbers as ranges even without a range
+
+* parser2_expression should accept a function with no arguments but with parens.
+  greet() should be a valid expression.

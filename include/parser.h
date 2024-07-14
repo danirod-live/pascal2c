@@ -103,6 +103,9 @@ typedef enum expr2_type {
 	EXP_FIELD_LIST_ROW,
 	EXP_FIELD_LIST_CASE,
 	EXP_FIELD_LIST_CASE_ROW,
+	EXP_STMT_LABEL,
+	EXP_STMT_ASSIGN,
+	EXP_STMT_FUNCTION_CALL,
 } expr2_type_t;
 
 struct expr2;
@@ -226,6 +229,22 @@ typedef struct expr_field_list_case_row {
 	struct expr2 *field_list;
 } expr_field_list_case_row_t;
 
+typedef struct expr_stmt_label {
+	struct expr2 *label;
+	struct expr2 *nested;
+} expr_stmt_label_t;
+
+typedef struct expr_stmt_assign {
+	struct expr2 *identifier;
+	struct expr2 *expression;
+} expr_stmt_assign_t;
+
+typedef struct expr_stmt_function_call {
+	struct expr2 *identifier;
+	struct expr2 **params;
+	unsigned int param_count;
+} expr_stmt_function_call_t;
+
 typedef struct expr2 {
 	expr2_type_t type;
 	union {
@@ -251,6 +270,9 @@ typedef struct expr2 {
 		expr_field_list_row_t field_list_row;
 		expr_field_list_case_t field_list_case;
 		expr_field_list_case_row_t field_list_case_row;
+		expr_stmt_label_t stmt_label;
+		expr_stmt_assign_t stmt_assign;
+		expr_stmt_function_call_t stmt_function_call;
 	} payload;
 } expr2_t;
 
@@ -267,6 +289,7 @@ expr2_t *parser2_simple_type(parser_t *parser);
 expr2_t *parser2_type(parser_t *parser);
 expr2_t *parser2_field_list(parser_t *parser);
 expr2_t *parser2_parameter_list(parser_t *parser);
+expr2_t *parser2_statement(parser_t *parser);
 
 #define E_IDENTIFIER(e) ((e).payload.identifier)
 #define E_UNSIGNED_NUMBER(e) ((e).payload.unsigned_number)
@@ -290,3 +313,6 @@ expr2_t *parser2_parameter_list(parser_t *parser);
 #define E_FIELD_LIST_ROW(e) ((e).payload.field_list_row)
 #define E_FIELD_LIST_CASE(e) ((e).payload.field_list_case)
 #define E_FIELD_LIST_CASE_ROW(e) ((e).payload.field_list_case_row)
+#define E_STMT_LABEL(e) ((e).payload.stmt_label)
+#define E_STMT_ASSIGNMENT(e) ((e).payload.stmt_assign)
+#define E_STMT_FUNCTION_CALL(e) ((e).payload.stmt_function_call)
