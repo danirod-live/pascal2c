@@ -59,7 +59,7 @@ compose_return:
 	field_list = expression_new(EXP_FIELD_LIST);
 	flist = &(E_FIELD_LIST(*field_list));
 	flist->rows = rows;
-	flist->rows_count = count;
+	flist->row_count = count;
 	flist->case_stmt = case_stmt;
 	return field_list;
 }

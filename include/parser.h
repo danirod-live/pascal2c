@@ -125,7 +125,7 @@ typedef struct expr_variable_path_dot {
 
 typedef struct expr_variable_path_array {
 	struct expr2 **expressions;
-	unsigned int exp_count;
+	unsigned int expression_count;
 } expr_variable_path_array_t;
 
 typedef struct expr_variable {
@@ -179,7 +179,7 @@ typedef struct expr_record_type {
 
 typedef struct expr_array_type {
 	struct expr2 **inner_types;
-	int inner_types_count;
+	int inner_type_count;
 	struct expr2 *type;
 	int packed;
 } expr_array_type_t;
@@ -203,7 +203,7 @@ typedef struct expr_plist {
 
 typedef struct expr_field_list {
 	struct expr2 **rows;
-	unsigned int rows_count;
+	unsigned int row_count;
 	struct expr2 *case_stmt;
 } expr_field_list_t;
 

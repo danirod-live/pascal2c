@@ -110,14 +110,14 @@ type_array(parser_t *parser, int packed)
 	expr = expression_new(EXP_ARRAY_TYPE);
 	arr = &(E_ARRAY_TYPE(*expr));
 	arr->packed = packed;
-	arr->inner_types_count = 0;
+	arr->inner_type_count = 0;
 
 	do {
 		// Read next item of the array.
-		inner_pos = arr->inner_types_count;
-		arr->inner_types_count++;
+		inner_pos = arr->inner_type_count;
+		arr->inner_type_count++;
 		arr->inner_types =
-		    realloc(arr->inner_types, arr->inner_types_count);
+		    realloc(arr->inner_types, arr->inner_type_count);
 		arr->inner_types[inner_pos] = parser2_simple_type(parser);
 
 		// Check if this is the last item to read.

@@ -84,7 +84,7 @@ print_expr2_variable_path_array(expr2_t *exp)
 {
 	printf("{\"paths\": ");
 	print_expr2_array(E_VARIABLE_PATH_ARRAY(*exp).expressions,
-	                  E_VARIABLE_PATH_ARRAY(*exp).exp_count);
+	                  E_VARIABLE_PATH_ARRAY(*exp).expression_count);
 	printf("}");
 }
 
@@ -229,7 +229,7 @@ print_expr2_array_type(expr2_t *exp)
 	printf("{\"packed\": %s, \"type\": ", arr->packed ? "true" : "false");
 	print_expr2(arr->type);
 	printf(", \"dimensions\": ");
-	print_expr2_array(arr->inner_types, arr->inner_types_count);
+	print_expr2_array(arr->inner_types, arr->inner_type_count);
 	printf("}");
 }
 
@@ -353,9 +353,9 @@ print_expr2_field_list(expr2_t *exp)
 	expr_field_list_t *flist = &(E_FIELD_LIST(*exp));
 
 	printf("{\"chunks\": [");
-	for (i = 0; i < flist->rows_count; i++) {
+	for (i = 0; i < flist->row_count; i++) {
 		print_expr2(flist->rows[i]);
-		if (i + 1 < flist->rows_count)
+		if (i + 1 < flist->row_count)
 			printf(", ");
 	}
 	printf("], \"cases\": ");

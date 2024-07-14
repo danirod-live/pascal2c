@@ -78,7 +78,7 @@ static void
 extra_array(parser_t *parser, expr2_t *expr)
 {
 #define E_EXPRESSIONS(e) (E_VARIABLE_PATH_ARRAY(e).expressions)
-#define E_EXP_COUNT(e) (E_VARIABLE_PATH_ARRAY(e).exp_count)
+#define E_EXP_COUNT(e) (E_VARIABLE_PATH_ARRAY(e).expression_count)
 	int size, next_exp;
 	token_t *separator;
 
