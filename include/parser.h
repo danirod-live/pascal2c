@@ -126,6 +126,7 @@ typedef enum expr2_type {
 	EXP_BLOCK_VAR_LINE,
 	EXP_BLOCK_FUNCTION,
 	EXP_BLOCK_PROCEDURE,
+	EXP_PROGRAM,
 } expr2_type_t;
 
 struct expr2;
@@ -378,6 +379,13 @@ typedef struct expr_block_function {
 	struct expr2 *block;
 } expr_block_function_t;
 
+typedef struct expr_program {
+	struct expr2 *identifier;
+	struct expr2 **subidents;
+	int subident_count;
+	struct expr2 *block;
+} expr_program_t;
+
 typedef struct expr2 {
 	expr2_type_t type;
 	union {
@@ -426,6 +434,7 @@ typedef struct expr2 {
 		expr_block_var_line_t block_var_line;
 		expr_block_procedure_t block_procedure;
 		expr_block_function_t block_function;
+		expr_program_t program;
 	} payload;
 } expr2_t;
 
@@ -444,6 +453,7 @@ expr2_t *parser2_field_list(parser_t *parser);
 expr2_t *parser2_parameter_list(parser_t *parser);
 expr2_t *parser2_statement(parser_t *parser);
 expr2_t *parser2_block(parser_t *parser);
+expr2_t *parser2_program(parser_t *parser);
 
 #define E_IDENTIFIER(e) ((e).payload.identifier)
 #define E_UNSIGNED_NUMBER(e) ((e).payload.unsigned_number)
@@ -490,3 +500,4 @@ expr2_t *parser2_block(parser_t *parser);
 #define E_BLOCK_VAR_LINE(e) ((e).payload.block_var_line)
 #define E_BLOCK_PROCEDURE(e) ((e).payload.block_procedure)
 #define E_BLOCK_FUNCTION(e) ((e).payload.block_function)
+#define E_PROGRAM(e) ((e).payload.program)

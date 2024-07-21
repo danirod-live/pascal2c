@@ -703,6 +703,25 @@ print_expr2_block_function(expr2_t *exp)
 }
 
 static void
+print_expr2_program(expr2_t *exp)
+{
+	int i;
+	expr_program_t *program = &(E_PROGRAM(*exp));
+
+	printf("{\"identifier\": ");
+	print_expr2(program->identifier);
+	printf(", \"subidentifiers\": [");
+	for (i = 0; i < program->subident_count; i++) {
+		print_expr2(program->subidents[i]);
+		if (i + 1 < program->subident_count)
+			printf(", ");
+	}
+	printf("], \"block\": ");
+	print_expr2(program->block);
+	printf("}");
+}
+
+static void
 print_expr2(expr2_t *exp)
 {
 	char *type;
@@ -897,6 +916,10 @@ print_expr2(expr2_t *exp)
 		type = "BlockFunction";
 		detail_func = print_expr2_block_function;
 		break;
+	case EXP_PROGRAM:
+		type = "Program";
+		detail_func = print_expr2_program;
+		break;
 	default:
 		type = NULL;
 		detail_func = NULL;
@@ -982,7 +1005,7 @@ eval_code()
 	}
 
 	parser_load_tokens(parser, scanner);
-	expr2_t *ident = parser2_block(parser);
+	expr2_t *ident = parser2_program(parser);
 	print_expr2(ident);
 
 pre_cleanup_parser:
