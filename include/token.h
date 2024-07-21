@@ -51,6 +51,7 @@ typedef enum tokentype {
 	TOK_IDENTIFIER,
 	TOK_IF,
 	TOK_IN,
+	TOK_LABEL,
 	TOK_LBRACKET,
 	TOK_LESSEQL,
 	TOK_LESSER,

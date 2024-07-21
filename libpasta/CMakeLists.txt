@@ -14,6 +14,7 @@ add_library(pasta
 	parser-statement.c
 	parser-type.c
 	parser-variable.c
+	parser2-block.c
 	parser2-common.c
 	parser2-simple.c
 	parser2-variable.c

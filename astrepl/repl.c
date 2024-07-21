@@ -555,6 +555,154 @@ print_expr2_exit_stmt(expr2_t *exp)
 }
 
 static void
+print_expr2_block(expr2_t *exp)
+{
+	int i;
+	expr_block_t *block = &(E_BLOCK(*exp));
+
+	printf("{\"preblocks\": [");
+	for (i = 0; i < block->preblock_count; i++) {
+		print_expr2(block->preblocks[i]);
+		if (i + 1 < block->preblock_count)
+			printf(", ");
+	}
+	printf("], \"statements\": [");
+	for (i = 0; i < block->statement_count; i++) {
+		print_expr2(block->statements[i]);
+		if (i + 1 < block->statement_count)
+			printf(", ");
+	}
+	printf("]}");
+}
+
+static void
+print_expr2_block_label(expr2_t *exp)
+{
+	int i;
+	expr_block_label_t *label = &(E_BLOCK_LABEL(*exp));
+
+	printf("{\"labels\": [");
+	for (i = 0; i < label->label_count; i++) {
+		print_expr2(label->labels[i]);
+		if (i + 1 < label->label_count)
+			printf(", ");
+	}
+	printf("]}");
+}
+
+static void
+print_expr2_block_const(expr2_t *exp)
+{
+	int i;
+	expr_block_const_t *constb = &(E_BLOCK_CONST(*exp));
+
+	printf("{\"constants\": [");
+	for (i = 0; i < constb->line_count; i++) {
+		print_expr2(constb->lines[i]);
+		if (i + 1 < constb->line_count)
+			printf(", ");
+	}
+	printf("]}");
+}
+
+static void
+print_expr2_block_const_line(expr2_t *exp)
+{
+	expr_block_const_line_t *line = &(E_BLOCK_CONST_LINE(*exp));
+	printf("{\"name\": ");
+	print_expr2(line->name);
+	printf(", \"value\": ");
+	print_expr2(line->value);
+	printf("}");
+}
+
+static void
+print_expr2_block_type(expr2_t *exp)
+{
+	int i;
+	expr_block_type_t *typeb = &(E_BLOCK_TYPE(*exp));
+
+	printf("{\"types\": [");
+	for (i = 0; i < typeb->line_count; i++) {
+		print_expr2(typeb->lines[i]);
+		if (i + 1 < typeb->line_count)
+			printf(", ");
+	}
+	printf("]}");
+}
+
+static void
+print_expr2_block_type_line(expr2_t *exp)
+{
+	expr_block_type_line_t *line = &(E_BLOCK_TYPE_LINE(*exp));
+	printf("{\"name\": ");
+	print_expr2(line->name);
+	printf(", \"value\": ");
+	print_expr2(line->value);
+	printf("}");
+}
+
+static void
+print_expr2_block_var(expr2_t *exp)
+{
+	int i;
+	expr_block_var_t *varb = &(E_BLOCK_VAR(*exp));
+
+	printf("{\"types\": [");
+	for (i = 0; i < varb->line_count; i++) {
+		print_expr2(varb->lines[i]);
+		if (i + 1 < varb->line_count)
+			printf(", ");
+	}
+	printf("]}");
+}
+
+static void
+print_expr2_block_var_line(expr2_t *exp)
+{
+	int i;
+	expr_block_var_line_t *line = &(E_BLOCK_VAR_LINE(*exp));
+
+	printf("{\"identifiers\": [");
+	for (i = 0; i < line->identifier_count; i++) {
+		print_expr2(line->identifiers[i]);
+		if (i + 1 < line->identifier_count)
+			printf(", ");
+	}
+	printf("], \"type\": ");
+	print_expr2(line->type);
+	printf("}");
+}
+
+static void
+print_expr2_block_procedure(expr2_t *exp)
+{
+	expr_block_procedure_t *proc = &(E_BLOCK_PROCEDURE(*exp));
+	printf("{\"identifier\": ");
+	print_expr2(proc->identifier);
+	printf(", \"parameters\": ");
+	print_expr2(proc->parlist);
+	printf(", \"block\": ");
+	print_expr2(proc->block);
+	printf("}");
+}
+
+static void
+print_expr2_block_function(expr2_t *exp)
+{
+	expr_block_function_t *func = &(E_BLOCK_FUNCTION(*exp));
+	printf("{\"identifier\": ");
+	print_expr2(func->identifier);
+	printf(", \"parameters\": ");
+	print_expr2(func->parlist);
+	printf(", \"returntype\": ");
+	print_expr2(func->returntype);
+	printf(", \"block\": ");
+	print_expr2(func->block);
+	printf("}");
+}
+
+static void
 print_expr2(expr2_t *exp)
 {
 	char *type;
@@ -709,6 +857,46 @@ print_expr2(expr2_t *exp)
 		type = "StatementExit";
 		detail_func = print_expr2_exit_stmt;
 		break;
+	case EXP_BLOCK:
+		type = "Block";
+		detail_func = print_expr2_block;
+		break;
+	case EXP_BLOCK_LABEL:
+		type = "BlockLabel";
+		detail_func = print_expr2_block_label;
+		break;
+	case EXP_BLOCK_CONST:
+		type = "BlockConst";
+		detail_func = print_expr2_block_const;
+		break;
+	case EXP_BLOCK_CONST_LINE:
+		type = "BlockConstLine";
+		detail_func = print_expr2_block_const_line;
+		break;
+	case EXP_BLOCK_TYPE:
+		type = "BlockType";
+		detail_func = print_expr2_block_type;
+		break;
+	case EXP_BLOCK_TYPE_LINE:
+		type = "BlockTypeLine";
+		detail_func = print_expr2_block_type_line;
+		break;
+	case EXP_BLOCK_VAR:
+		type = "BlockVar";
+		detail_func = print_expr2_block_var;
+		break;
+	case EXP_BLOCK_VAR_LINE:
+		type = "BlockVarLine";
+		detail_func = print_expr2_block_var_line;
+		break;
+	case EXP_BLOCK_PROCEDURE:
+		type = "BlockProcedure";
+		detail_func = print_expr2_block_procedure;
+		break;
+	case EXP_BLOCK_FUNCTION:
+		type = "BlockFunction";
+		detail_func = print_expr2_block_function;
+		break;
 	default:
 		type = NULL;
 		detail_func = NULL;
@@ -794,7 +982,7 @@ eval_code()
 	}
 
 	parser_load_tokens(parser, scanner);
-	expr2_t *ident = parser2_statement(parser);
+	expr2_t *ident = parser2_block(parser);
 	print_expr2(ident);
 
 pre_cleanup_parser:

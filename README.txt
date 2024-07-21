@@ -51,7 +51,7 @@ Parts of the compiler grammar that are implemented:
 - [x] Field list
 - [x] Type
 - [x] Statement
-- [ ] Block
+- [x] Block
 - [ ] Program
 
 

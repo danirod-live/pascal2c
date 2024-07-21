@@ -116,6 +116,16 @@ typedef enum expr2_type {
 	EXP_STMT_WITH,
 	EXP_STMT_GOTO,
 	EXP_STMT_EXIT,
+	EXP_BLOCK,
+	EXP_BLOCK_LABEL,
+	EXP_BLOCK_CONST,
+	EXP_BLOCK_CONST_LINE,
+	EXP_BLOCK_TYPE,
+	EXP_BLOCK_TYPE_LINE,
+	EXP_BLOCK_VAR,
+	EXP_BLOCK_VAR_LINE,
+	EXP_BLOCK_FUNCTION,
+	EXP_BLOCK_PROCEDURE,
 } expr2_type_t;
 
 struct expr2;
@@ -312,6 +322,62 @@ typedef struct expr_stmt_exit {
 	struct expr2 *identifier;
 } expr_stmt_exit_t;
 
+typedef struct expr_block {
+	struct expr2 **preblocks;
+	int preblock_count;
+	struct expr2 **statements;
+	int statement_count;
+} expr_block_t;
+
+typedef struct expr_block_label {
+	struct expr2 **labels;
+	int label_count;
+} expr_block_label_t;
+
+typedef struct expr_block_const {
+	struct expr2 **lines;
+	int line_count;
+} expr_block_const_t;
+
+typedef struct expr_block_const_line {
+	struct expr2 *name;
+	struct expr2 *value;
+} expr_block_const_line_t;
+
+typedef struct expr_block_type {
+	struct expr2 **lines;
+	int line_count;
+} expr_block_type_t;
+
+typedef struct expr_block_type_line {
+	struct expr2 *name;
+	struct expr2 *value;
+} expr_block_type_line_t;
+
+typedef struct expr_block_var {
+	struct expr2 **lines;
+	int line_count;
+} expr_block_var_t;
+
+typedef struct expr_block_var_line {
+	struct expr2 **identifiers;
+	int identifier_count;
+	struct expr2 *type;
+} expr_block_var_line_t;
+
+typedef struct expr_block_procedure {
+	struct expr2 *identifier;
+	struct expr2 *parlist;
+	struct expr2 *block;
+} expr_block_procedure_t;
+
+typedef struct expr_block_function {
+	struct expr2 *identifier;
+	struct expr2 *parlist;
+	struct expr2 *returntype;
+	struct expr2 *block;
+} expr_block_function_t;
+
 typedef struct expr2 {
 	expr2_type_t type;
 	union {
@@ -350,6 +416,16 @@ typedef struct expr2 {
 		expr_stmt_with_t stmt_with;
 		expr_stmt_goto_t stmt_goto;
 		expr_stmt_exit_t stmt_exit;
+		expr_block_t block;
+		expr_block_label_t block_label;
+		expr_block_const_t block_const;
+		expr_block_const_line_t block_const_line;
+		expr_block_type_t block_type;
+		expr_block_type_line_t block_type_line;
+		expr_block_var_t block_var;
+		expr_block_var_line_t block_var_line;
+		expr_block_procedure_t block_procedure;
+		expr_block_function_t block_function;
 	} payload;
 } expr2_t;
 
@@ -367,6 +443,7 @@ expr2_t *parser2_type(parser_t *parser);
 expr2_t *parser2_field_list(parser_t *parser);
 expr2_t *parser2_parameter_list(parser_t *parser);
 expr2_t *parser2_statement(parser_t *parser);
+expr2_t *parser2_block(parser_t *parser);
 
 #define E_IDENTIFIER(e) ((e).payload.identifier)
 #define E_UNSIGNED_NUMBER(e) ((e).payload.unsigned_number)
@@ -403,3 +480,13 @@ expr2_t *parser2_statement(parser_t *parser);
 #define E_STMT_WITH(e) ((e).payload.stmt_with)
 #define E_STMT_GOTO(e) ((e).payload.stmt_goto)
 #define E_STMT_EXIT(e) ((e).payload.stmt_exit)
+#define E_BLOCK(e) ((e).payload.block)
+#define E_BLOCK_LABEL(e) ((e).payload.block_label)
+#define E_BLOCK_CONST(e) ((e).payload.block_const)
+#define E_BLOCK_CONST_LINE(e) ((e).payload.block_const_line)
+#define E_BLOCK_TYPE(e) ((e).payload.block_type)
+#define E_BLOCK_TYPE_LINE(e) ((e).payload.block_type_line)
+#define E_BLOCK_VAR(e) ((e).payload.block_var)
+#define E_BLOCK_VAR_LINE(e) ((e).payload.block_var_line)
+#define E_BLOCK_PROCEDURE(e) ((e).payload.block_procedure)
+#define E_BLOCK_FUNCTION(e) ((e).payload.block_function)
