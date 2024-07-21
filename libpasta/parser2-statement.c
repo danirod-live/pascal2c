@@ -21,6 +21,7 @@
 int detect_label(parser_t *);
 expr2_t *label_stmt(parser_t *);
 expr2_t *assignment_stmt(parser_t *);
+expr2_t *assignment_or_function_call(parser_t *parser);
 expr2_t *function_call_stmt(parser_t *parser);
 expr2_t *begin_stmt(parser_t *parser);
 expr2_t *if_stmt(parser_t *parser);
@@ -62,6 +63,22 @@ parser2_statement(parser_t *parser)
 		return goto_stmt(parser);
 	case TOK_EXIT:
 		return exit_stmt(parser);
+	default:
+		return assignment_or_function_call(parser);
+	}
+}
+
+expr2_t *
+assignment_or_function_call(parser_t *parser)
+{
+	token_t *token = parser_peek_far(parser, 1);
+
+	switch (token->type) {
+	case TOK_LBRACKET:
+	case TOK_DOT:
+	case TOK_CARET:
+	case TOK_ASSIGN:
+		return assignment_stmt(parser);
 	default:
 		return function_call_stmt(parser);
 	}
