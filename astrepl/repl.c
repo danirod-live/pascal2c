@@ -405,6 +405,156 @@ print_expr2_stmt_function_call(expr2_t *exp)
 }
 
 static void
+print_expr2_stmt_begin(expr2_t *exp)
+{
+	int i;
+	expr_stmt_begin_t *begin = &(E_STMT_BEGIN(*exp));
+	printf("{\"statements\": [");
+	for (i = 0; i < begin->statement_count; i++) {
+		print_expr2(begin->statements[i]);
+		if (i + 1 < begin->statement_count)
+			printf(", ");
+	}
+	printf("]}");
+}
+
+static void
+print_expr2_if_stmt(expr2_t *exp)
+{
+	expr_stmt_if_t *ifstmt = &(E_STMT_IF(*exp));
+	printf("{\"condition\": ");
+	print_expr2(ifstmt->condition);
+	printf(", \"then\": ");
+	print_expr2(ifstmt->then);
+	if (ifstmt->else_) {
+		printf(", \"else\": ");
+		print_expr2(ifstmt->else_);
+	} else {
+		printf(", \"else\": null");
+	}
+	printf("}");
+}
+
+static void
+print_expr2_repeat_stmt(expr2_t *exp)
+{
+	int i;
+	expr_stmt_repeat_t *repeat = &(E_STMT_REPEAT(*exp));
+
+	printf("{\"statements\": [");
+	for (i = 0; i < repeat->statement_count; i++) {
+		print_expr2(repeat->statements[i]);
+		if (i + 1 < repeat->statement_count)
+			printf(", ");
+	}
+	printf("], \"condition\": ");
+	print_expr2(repeat->condition);
+	printf("}");
+}
+
+static void
+print_expr2_while_stmt(expr2_t *exp)
+{
+	expr_stmt_while_t *whilestmt = &(E_STMT_WHILE(*exp));
+
+	printf("{\"condition\": ");
+	print_expr2(whilestmt->condition);
+	printf(", \"statement\": ");
+	print_expr2(whilestmt->statement);
+	printf("}");
+}
+
+static void
+print_expr2_for_stmt(expr2_t *exp)
+{
+	expr_stmt_for_t *forstmt = &(E_STMT_FOR(*exp));
+
+	printf("{\"identifier\": ");
+	print_expr2(forstmt->identifier);
+	printf(", \"start\": ");
+	print_expr2(forstmt->start);
+	printf(", \"end\": ");
+	print_expr2(forstmt->end);
+	printf(", \"direction\": %d, \"statement\": ", forstmt->direction);
+	print_expr2(forstmt->statement);
+	printf("}");
+}
+
+static void
+print_expr2_case_branch_stmt(expr2_t *exp)
+{
+	int i;
+	expr_stmt_case_branch_t *branch = &(E_STMT_CASE_BRANCH(*exp));
+
+	printf("{\"constants\": [");
+	for (i = 0; i < branch->constant_count; i++) {
+		print_expr2(branch->constants[i]);
+		if (i + 1 < branch->constant_count)
+			printf(", ");
+	}
+	printf("], \"statement\": ");
+	print_expr2(branch->statement);
+	printf("}");
+}
+
+static void
+print_expr2_case_stmt(expr2_t *exp)
+{
+	int i;
+	expr_stmt_case_t *casestmt = &(E_STMT_CASE(*exp));
+
+	printf("{\"expression\": ");
+	print_expr2(casestmt->expression);
+	printf(", \"conditions\": [");
+	for (i = 0; i < casestmt->case_count; i++) {
+		print_expr2(casestmt->cases[i]);
+		if (i + 1 < casestmt->case_count)
+			printf(", ");
+	}
+	printf("]}");
+}
+
+static void
+print_expr2_with_stmt(expr2_t *exp)
+{
+	int i;
+	expr_stmt_with_t *with = &(E_STMT_WITH(*exp));
+
+	printf("{\"variables\": [");
+	for (i = 0; i < with->variable_count; i++) {
+		print_expr2(with->variables[i]);
+		if (i + 1 < with->variable_count)
+			printf(", ");
+	}
+	printf("], \"statement\": ");
+	print_expr2(with->statement);
+	printf("}");
+}
+
+static void
+print_expr2_goto_stmt(expr2_t *exp)
+{
+	expr_stmt_goto_t *gotostmt = &(E_STMT_GOTO(*exp));
+	printf("{\"identifier\": ");
+	print_expr2(gotostmt->identifier);
+	printf("}");
+}
+
+static void
+print_expr2_exit_stmt(expr2_t *exp)
+{
+	expr_stmt_exit_t *exitstmt = &(E_STMT_EXIT(*exp));
+	printf("{\"program\": %s, \"identifier\": ",
+	       exitstmt->program ? "true" : "false");
+	if (exitstmt->identifier) {
+		print_expr2(exitstmt->identifier);
+	} else {
+		printf("null");
+	}
+	printf("}");
+}
+
+static void
 print_expr2(expr2_t *exp)
 {
 	char *type;
@@ -518,6 +668,46 @@ print_expr2(expr2_t *exp)
 	case EXP_STMT_FUNCTION_CALL:
 		type = "StatementFunctionCall";
 		detail_func = print_expr2_stmt_function_call;
+		break;
+	case EXP_STMT_BEGIN:
+		type = "StatementBegin";
+		detail_func = print_expr2_stmt_begin;
+		break;
+	case EXP_STMT_IF:
+		type = "StatementIf";
+		detail_func = print_expr2_if_stmt;
+		break;
+	case EXP_STMT_REPEAT:
+		type = "StatementRepeat";
+		detail_func = print_expr2_repeat_stmt;
+		break;
+	case EXP_STMT_WHILE:
+		type = "StatementWhile";
+		detail_func = print_expr2_while_stmt;
+		break;
+	case EXP_STMT_FOR:
+		type = "StatementFor";
+		detail_func = print_expr2_for_stmt;
+		break;
+	case EXP_STMT_CASE_BRANCH:
+		type = "StatementCaseBranch";
+		detail_func = print_expr2_case_branch_stmt;
+		break;
+	case EXP_STMT_CASE:
+		type = "StatementCase";
+		detail_func = print_expr2_case_stmt;
+		break;
+	case EXP_STMT_WITH:
+		type = "StatementWith";
+		detail_func = print_expr2_with_stmt;
+		break;
+	case EXP_STMT_GOTO:
+		type = "StatementGoto";
+		detail_func = print_expr2_goto_stmt;
+		break;
+	case EXP_STMT_EXIT:
+		type = "StatementExit";
+		detail_func = print_expr2_exit_stmt;
 		break;
 	default:
 		type = NULL;

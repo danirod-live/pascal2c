@@ -106,6 +106,16 @@ typedef enum expr2_type {
 	EXP_STMT_LABEL,
 	EXP_STMT_ASSIGN,
 	EXP_STMT_FUNCTION_CALL,
+	EXP_STMT_BEGIN,
+	EXP_STMT_IF,
+	EXP_STMT_REPEAT,
+	EXP_STMT_WHILE,
+	EXP_STMT_FOR,
+	EXP_STMT_CASE_BRANCH,
+	EXP_STMT_CASE,
+	EXP_STMT_WITH,
+	EXP_STMT_GOTO,
+	EXP_STMT_EXIT,
 } expr2_type_t;
 
 struct expr2;
@@ -245,6 +255,63 @@ typedef struct expr_stmt_function_call {
 	unsigned int param_count;
 } expr_stmt_function_call_t;
 
+typedef struct expr_stmt_begin {
+	struct expr2 **statements;
+	unsigned int statement_count;
+} expr_stmt_begin_t;
+
+typedef struct expr_stmt_if {
+	struct expr2 *condition;
+	struct expr2 *then;
+	struct expr2 *else_;
+} expr_stmt_if_t;
+
+typedef struct expr_stmt_repeat {
+	struct expr2 **statements;
+	unsigned int statement_count;
+	struct expr2 *condition;
+} expr_stmt_repeat_t;
+
+typedef struct expr_stmt_while {
+	struct expr2 *condition;
+	struct expr2 *statement;
+} expr_stmt_while_t;
+
+typedef struct expr_stmt_for {
+	struct expr2 *identifier;
+	struct expr2 *start;
+	struct expr2 *end;
+	int direction; // 1 for UP, -1 for DOWN
+	struct expr2 *statement;
+} expr_stmt_for_t;
+
+typedef struct expr_stmt_case_branch {
+	struct expr2 **constants;
+	int constant_count;
+	struct expr2 *statement;
+} expr_stmt_case_branch_t;
+
+typedef struct expr_stmt_case {
+	struct expr2 *expression;
+	struct expr2 **cases;
+	int case_count;
+} expr_stmt_case_t;
+
+typedef struct expr_stmt_with {
+	struct expr2 **variables;
+	int variable_count;
+	struct expr2 *statement;
+} expr_stmt_with_t;
+
+typedef struct expr_stmt_goto {
+	struct expr2 *identifier;
+} expr_stmt_goto_t;
+
+typedef struct expr_stmt_exit {
+	int program; // boolean
+	struct expr2 *identifier;
+} expr_stmt_exit_t;
+
 typedef struct expr2 {
 	expr2_type_t type;
 	union {
@@ -273,6 +340,16 @@ typedef struct expr2 {
 		expr_stmt_label_t stmt_label;
 		expr_stmt_assign_t stmt_assign;
 		expr_stmt_function_call_t stmt_function_call;
+		expr_stmt_begin_t stmt_begin;
+		expr_stmt_if_t stmt_if;
+		expr_stmt_repeat_t stmt_repeat;
+		expr_stmt_while_t stmt_while;
+		expr_stmt_for_t stmt_for;
+		expr_stmt_case_t stmt_case;
+		expr_stmt_case_branch_t stmt_case_branch;
+		expr_stmt_with_t stmt_with;
+		expr_stmt_goto_t stmt_goto;
+		expr_stmt_exit_t stmt_exit;
 	} payload;
 } expr2_t;
 
@@ -316,3 +393,13 @@ expr2_t *parser2_statement(parser_t *parser);
 #define E_STMT_LABEL(e) ((e).payload.stmt_label)
 #define E_STMT_ASSIGNMENT(e) ((e).payload.stmt_assign)
 #define E_STMT_FUNCTION_CALL(e) ((e).payload.stmt_function_call)
+#define E_STMT_BEGIN(e) ((e).payload.stmt_begin)
+#define E_STMT_IF(e) ((e).payload.stmt_if)
+#define E_STMT_REPEAT(e) ((e).payload.stmt_repeat)
+#define E_STMT_WHILE(e) ((e).payload.stmt_while)
+#define E_STMT_FOR(e) ((e).payload.stmt_for)
+#define E_STMT_CASE_BRANCH(e) ((e).payload.stmt_case_branch)
+#define E_STMT_CASE(e) ((e).payload.stmt_case)
+#define E_STMT_WITH(e) ((e).payload.stmt_with)
+#define E_STMT_GOTO(e) ((e).payload.stmt_goto)
+#define E_STMT_EXIT(e) ((e).payload.stmt_exit)
